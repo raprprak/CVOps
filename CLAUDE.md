@@ -57,22 +57,24 @@ Unless I ask otherwise:
 
 ## Project
 
-Resume-as-code: treats a person's career data as a single structured source of truth, compiles it deterministically into ATS-safe PDF resumes, and lints/tests the output the way a CI pipeline tests code.
+Resume-as-code, for one person (N=1). A master career-data file plus per-job "targets" are compiled deterministically into ATS-safe PDFs, linted the way CI tests code, and scored for keyword coverage against a job description. Plan and decision log: `docs/PLAN.md` — read it before proposing architecture changes; it records what would reopen each decision.
 
 ## Architecture
-- `backend/` — FastAPI (Python, uv-managed). Owns the compile pipeline: YAML career data → Jinja2 → LaTeX → PDF (via tectonic), plus ATS-compliance linting and JD-matching.
-- `frontend/` — Next.js (TypeScript, App Router, Tailwind). Talks to the backend's JSON API at `http://localhost:8000`.
-- No database. Career data lives as version-controlled YAML under `backend/data/profiles/`; git is the versioning/history layer.
+- Python 3.12, uv-managed, src layout at the repo root (`src/cvops/`). No web layer: `cvops` is a Typer CLI (`build`, `lint`, `match`, `tailor`).
+- Pipeline: `data/master.yaml` + `data/targets/<slug>.yaml` → `services/resolve.py` (`ResolvedResume`; every bullet carries its master ID) → `services/render.py` (Jinja2 → Typst → PDF via `typst-py`) → `out/<slug>.pdf` → `services/ats_lint.py` (rules L1–L10). `services/match.py` scores a target against `data/jds/<slug>.md`; `services/tailor.py` proposes a target from master + JD.
+- Renderer is **Typst**, not LaTeX: tagged PDFs by default, byte-reproducible with a fixed timestamp, no `glyphtounicode` workaround.
+- No database. YAML in git is the store and the history.
+- `frontend/` — Next.js scaffold, **parked** (decision 06 in `docs/PLAN.md`). No work goes there unless the plan changes.
 
 ## Rules
 Stack-specific and domain conventions live in `.claude/rules/` (kept out of this file on purpose):
-- [.claude/rules/backend.md](.claude/rules/backend.md) — Python/FastAPI/uv/ruff conventions
-- [.claude/rules/frontend.md](.claude/rules/frontend.md) — Next.js/TypeScript/Tailwind conventions
-- [.claude/rules/context.md](.claude/rules/context.md) — Graphify discovery policy
-- [.claude/rules/ats-compliance.md](.claude/rules/ats-compliance.md) — ATS layout/linting/ranking rules the compile pipeline must satisfy, plus prior-art references
+- [.claude/rules/python.md](.claude/rules/python.md) — Python/uv/ruff/Typst conventions and package structure
+- [.claude/rules/ats-compliance.md](.claude/rules/ats-compliance.md) — ATS layout rules, lint rules L1–L10, ranking guidance, prior art
+- [.claude/rules/context.md](.claude/rules/context.md) — Graphify discovery policy (`graphify-out/`)
+- [.claude/rules/frontend.md](.claude/rules/frontend.md) — parked Next.js scaffold
 
 ## Context hygiene
-`.claudeignore` (root) excludes `node_modules/`, `.venv/`, build output (`dist/`, `build/`, `.next/`), logs, large fixtures/mocks, and auto-generated/binary assets from discovery — keep it current as the pipeline starts producing compiled artifacts.
+`.claudeignore` (root) excludes `node_modules/`, `.venv/`, build output (`dist/`, `build/`, `.next/`, `out/`), logs, large fixtures and binary assets from discovery — keep it current as the pipeline produces compiled artifacts.
 
 ## Status
-Early scaffold (2026-09-15): directory structure and tooling only. No render/lint/match pipeline implemented yet.
+P0 done (2026-09-15): Python project flattened to the repo root as a CLI, FastAPI stub removed, Typst chosen, plan written. Pipeline implementation starts at P1 — see `docs/PLAN.md` for phases and exit criteria.

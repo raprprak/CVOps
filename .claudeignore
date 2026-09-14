@@ -1,28 +1,26 @@
 # Dependencies
 **/node_modules/
-backend/.venv/
+.venv/
 **/venv/
 
 # Build output
 **/dist/
 **/build/
 **/.next/
+out/
 
 # Logs
 **/*.log
 
 # Large test fixtures / mock data dumps
-**/fixtures/**
+**/fixtures/**/*.pdf
 **/__mocks__/**
 **/*.fixture.json
 **/*.mock.json
 
 # Auto-generated lockfiles / binary & compiled assets
-backend/uv.lock
+uv.lock
 frontend/package-lock.json
-backend/data/profiles/**/*.pdf
-backend/data/profiles/**/*.aux
-backend/data/profiles/**/*.out
 *.pdf
 *.png
 *.jpg

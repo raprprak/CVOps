@@ -1,13 +1,11 @@
-# Frontend rules (Next.js / TypeScript)
+# Frontend rules (Next.js / TypeScript) — PARKED
 
-## Tooling
-- Package manager: npm (as scaffolded).
-- App Router (`src/app/`), TypeScript strict mode, Tailwind CSS.
-- Lint: `npm run lint` (eslint-config-next).
+`frontend/` is a Next.js scaffold kept in the repo but receiving no work (decision 06 in `docs/PLAN.md`): CVOps is a personal CLI and the value is in the pipeline. Don't add features, dependencies or API calls here. If decision 01 (single user) changes, re-enter via a thin API over `src/cvops/services/` and then apply the conventions below.
 
-## Conventions
-- All calls to the backend go through a single typed API client (`src/lib/api.ts`) — no ad-hoc `fetch` calls scattered across components.
-- Backend base URL via `NEXT_PUBLIC_API_URL` env var, defaulting to `http://localhost:8000`.
-- Server Components by default; add `"use client"` only where real interactivity is needed (form editing, live PDF preview).
-- Co-locate feature code under `src/app/<feature>/`; reserve `src/components/` for things shared across features.
-- Resume/career-data TypeScript types should mirror the backend's Pydantic models in `backend/src/cvops/models/` — when one changes, check the other.
+## Tooling (when un-parked)
+- Package manager: npm (as scaffolded). App Router (`src/app/`), TypeScript strict, Tailwind CSS. Lint: `npm run lint`.
+
+## Conventions (when un-parked)
+- All backend calls through one typed client (`src/lib/api.ts`); base URL via `NEXT_PUBLIC_API_URL`.
+- Server Components by default; `"use client"` only for real interactivity.
+- TypeScript resume types mirror the Pydantic models in `src/cvops/models/` — when one changes, check the other.

@@ -1,17 +1,13 @@
-# Python (backend)
-backend/.venv/
-backend/__pycache__/
+# Python
+.venv/
 **/__pycache__/
 *.pyc
-backend/.pytest_cache/
-backend/.ruff_cache/
-backend/dist/
+.pytest_cache/
+.ruff_cache/
+dist/
 
-# Compiled resume artifacts
-backend/data/profiles/**/*.pdf
-backend/data/profiles/**/*.aux
-backend/data/profiles/**/*.log
-backend/data/profiles/**/*.out
+# Compiled resumes and Typst intermediates
+out/
 
 # OS / editor
 .DS_Store

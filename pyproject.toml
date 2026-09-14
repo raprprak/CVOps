@@ -1,25 +1,25 @@
 [project]
-name = "cvops-backend"
+name = "cvops"
 version = "0.1.0"
-description = "Add your description here"
+description = "Resume-as-code: compile, lint and JD-match ATS-safe resumes from version-controlled YAML."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.141.1",
     "jinja2>=3.1.6",
+    "pdfplumber>=0.11.0",
     "pydantic>=2.13.5",
-    "pydantic-settings>=2.15.0",
     "pypdf>=6.18.1",
-    "python-multipart>=0.0.32",
     "pyyaml>=6.0.3",
-    "uvicorn[standard]>=0.53.0",
+    "typer>=0.15.0",
+    "typst>=0.14.0",
 ]
+
+[project.scripts]
+cvops = "cvops.cli:app"
 
 [dependency-groups]
 dev = [
-    "httpx>=0.28.1",
     "pytest>=9.1.1",
-    "pytest-asyncio>=1.4.0",
     "ruff>=0.16.7",
 ]
 
@@ -35,8 +35,7 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "ASYNC"]
+select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
 testpaths = ["tests"]
