@@ -1,0 +1,19 @@
+# Python (backend)
+backend/.venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/dist/
+
+# Compiled resume artifacts
+backend/data/profiles/**/*.pdf
+backend/data/profiles/**/*.aux
+backend/data/profiles/**/*.log
+backend/data/profiles/**/*.out
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
