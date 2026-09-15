@@ -51,6 +51,10 @@ class Skill(StrictModel):
     name: str = Field(min_length=1)
     category: str | None = None  # "Languages", "Backend", ... groups the Skills section
     tags: list[str] = Field(default_factory=list)
+    aliases: list[str] = Field(default_factory=list)  # other spellings a JD might use
+    # e.g. name="PostgreSQL", aliases=["Postgres", "psql"] -- match.py reports a JD hit on
+    # an alias as "present as alias" and recommends switching to the JD's exact spelling,
+    # since recruiter keyword search is exact-string (see .claude/rules/ats-compliance.md).
 
 
 class Experience(StrictModel):

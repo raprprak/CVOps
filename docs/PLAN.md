@@ -1,6 +1,6 @@
 # CVOps — Project Plan
 
-_Status: v1.1, 2026-09-15 — P0 complete. Provisional by design — every decision below carries the condition that would reopen it._
+_Status: v1.2, 2026-09-15 — P0-P3 implemented (unverified: `uv sync` and a real Typst compile did not run in the assistant's sandbox -- PyPI unreachable). Provisional by design — every decision below carries the condition that would reopen it._
 
 ## Thesis
 

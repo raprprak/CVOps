@@ -17,7 +17,8 @@ uv sync                      # installs typst-py, pdfplumber, typer, ...
 uv run cvops build [--all]   # data/master.yaml + data/targets/<slug>.yaml -> out/<slug>.{typ,pdf}
 uv run cvops lint  [--all]   # build, then check parse-fidelity + provenance rules (L1-L10)
 uv run cvops show  <slug>    # print the resolved resume (exactly what the template will print) as JSON
-uv run cvops match <slug>    # JD keyword coverage report (not yet implemented)
+uv run cvops match <slug>    # JD keyword coverage report: present / present-as-alias / missing
+uv run cvops tailor <jd> <new-slug>   # propose a target from master.yaml + a JD (selection only, no rewrites)
 uv run pytest                # unit tests (reportlab-synthesized PDFs for the linter; no Typst needed)
 ```
 

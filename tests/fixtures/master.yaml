@@ -23,6 +23,10 @@ skills:
   - id: sk-fastapi
     name: FastAPI
     category: Backend
+  - id: sk-postgresql
+    name: PostgreSQL
+    category: Data
+    aliases: [Postgres, psql]
 
 experience:
   - id: exp-a
@@ -34,13 +38,13 @@ experience:
     bullets:
       - id: exp-a-01
         text: Did thing 1 -- measured 50% better.
-        tags: [x]
+        tags: [python, fastapi]
         metric: true
       - id: exp-a-02
         text: >
           Did thing 2
           across two YAML lines.
-        tags: [y]
+        tags: [unrelated]
   - id: exp-b
     company: Beta Inc
     title: Junior Engineer
@@ -49,7 +53,7 @@ experience:
     bullets:
       - id: exp-b-01
         text: Did thing 3.
-        tags: [z]
+        tags: [postgresql]
 
 projects:
   - id: prj-a

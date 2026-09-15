@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Annotated, NoReturn
 
 import typer
+import yaml
 
 from cvops.core.files import (
     DataError,
@@ -19,8 +20,11 @@ from cvops.core.files import (
 )
 from cvops.models.resolved import ResolvedResume
 from cvops.services import ats_lint
+from cvops.services.match import Status
+from cvops.services.match import match as run_match
 from cvops.services.render import PDF_STANDARDS, RenderError, compile_pdf, render_typ
 from cvops.services.resolve import ResolveError, resolve
+from cvops.services.tailor import tailor as tailor_target
 
 app = typer.Typer(
     help="Resume-as-code: compile, lint and JD-match ATS-safe resumes from YAML.",
@@ -121,6 +125,87 @@ def lint(
         had_errors = had_errors or not result.ok
     if had_errors:
         raise typer.Exit(code=1)
+
+
+_STATUS_LABEL = {
+    Status.PRESENT: "present",
+    Status.PRESENT_AS_ALIAS: "present (alias)",
+    Status.MISSING_FROM_TARGET: "missing from target",
+    Status.MISSING: "missing",
+}
+
+
+def _read_jd(jd_path_arg: str, data_dir: Path) -> tuple[str, str]:
+    """Try `data_dir/jd_path_arg` first, then `jd_path_arg` as given. Returns
+    `(text, path_as_recorded)`, where the recorded path is relative to `data_dir` when
+    the JD was found there (so it round-trips into `Target.jd` the way other targets
+    reference their JDs), else the path as given."""
+    under_data = data_dir / jd_path_arg
+    if under_data.is_file():
+        return under_data.read_text(encoding="utf-8"), jd_path_arg
+    direct = Path(jd_path_arg)
+    if direct.is_file():
+        return direct.read_text(encoding="utf-8"), jd_path_arg
+    _fail(f"job description not found: tried {under_data} and {direct}")
+
+
+@app.command()
+def match(
+    slug: Annotated[str, typer.Argument(help="Target slug: data/targets/<slug>.yaml")],
+    data_dir: DataDir = Path("data"),
+    jd: Annotated[
+        str | None, typer.Option(help="JD path, overriding the target's own `jd:` field")
+    ] = None,
+) -> None:
+    """Score a target's keyword coverage against its job description."""
+    master = load_master(master_path(data_dir))
+    target = load_target(target_path(data_dir, slug))
+    resume = resolve(master, target, slug=slug)
+    jd_arg = jd or target.jd
+    if not jd_arg:
+        _fail(f"{slug} has no `jd:` field and no --jd was given")
+    jd_text, _ = _read_jd(jd_arg, data_dir)
+    report = run_match(resume, jd_text, master)
+
+    for status in (
+        Status.MISSING,
+        Status.MISSING_FROM_TARGET,
+        Status.PRESENT_AS_ALIAS,
+        Status.PRESENT,
+    ):
+        lines = report.by_status(status)
+        if not lines:
+            continue
+        typer.echo(f"-- {_STATUS_LABEL[status]} ({len(lines)}) --")
+        for line in sorted(lines, key=lambda ln: -ln.candidate.weight):
+            suffix = f"  [{line.note}]" if line.note else ""
+            typer.echo(f"  [{line.candidate.section:>8}] {line.candidate.term}{suffix}")
+    typer.echo(f"\nscore: {report.score:.0%}")
+
+
+@app.command()
+def tailor(
+    jd_path: Annotated[str, typer.Argument(help="JD file, relative to --data-dir or as given")],
+    new_slug: Annotated[str, typer.Argument(help="Slug to write: data/targets/<new-slug>.yaml")],
+    data_dir: DataDir = Path("data"),
+    max_pages: Annotated[int, typer.Option(help="max_pages for the proposed target")] = 1,
+    force: Annotated[bool, typer.Option(help="Overwrite an existing target file")] = False,
+) -> None:
+    """Propose a target from master.yaml + a JD: selection and ordering only, nothing
+    rewritten. Review the diff before committing -- this never writes an override."""
+    out_path = target_path(data_dir, new_slug)
+    if out_path.exists() and not force:
+        _fail(f"{out_path} already exists (pass --force to overwrite)")
+    master = load_master(master_path(data_dir))
+    jd_text, recorded_jd_path = _read_jd(jd_path, data_dir)
+    proposed = tailor_target(master, jd_text, jd_path=recorded_jd_path, max_pages=max_pages)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    data = proposed.model_dump(mode="json", exclude_none=True)
+    out_path.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    typer.echo(
+        f"wrote {out_path} -- review it, then `cvops build {new_slug}` and `cvops lint {new_slug}`"
+    )
 
 
 @app.command()
