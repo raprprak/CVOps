@@ -1,0 +1,77 @@
+# Minimal master used by the unit tests. Deliberately contains Typst-special characters.
+basics:
+  name: Test Person
+  email: test@example.com
+  phone: "+1 555 010 0000"
+  location: Nowhere, NW
+  links:
+    - label: GitHub
+      url: https://github.com/test_person
+
+summaries:
+  - id: sum-a
+    text: 'Engineer who ships *quality* & #speed [reliably].'   # quoted: ' #' starts a YAML comment
+    tags: [general]
+
+skills:
+  - id: sk-python
+    name: Python
+    category: Languages
+  - id: sk-cpp
+    name: C++
+    category: Languages
+  - id: sk-fastapi
+    name: FastAPI
+    category: Backend
+
+experience:
+  - id: exp-a
+    company: Alpha Co
+    title: Engineer
+    location: Remote
+    start: "2021-01"
+    end: null
+    bullets:
+      - id: exp-a-01
+        text: Did thing 1 -- measured 50% better.
+        tags: [x]
+        metric: true
+      - id: exp-a-02
+        text: >
+          Did thing 2
+          across two YAML lines.
+        tags: [y]
+  - id: exp-b
+    company: Beta Inc
+    title: Junior Engineer
+    start: "2019-06"
+    end: "2020-12"
+    bullets:
+      - id: exp-b-01
+        text: Did thing 3.
+        tags: [z]
+
+projects:
+  - id: prj-a
+    name: Project_A
+    url: https://example.com/a?b=1&c="2"
+    bullets:
+      - id: prj-a-01
+        text: Built it.
+
+education:
+  - id: edu-a
+    institution: Some University
+    degree: B.Sc.
+    field: Computer Science
+    start: "2015-08"
+    end: "2019-05"
+    details:
+      - id: edu-a-01
+        text: Dean's list.
+
+certifications:
+  - id: cert-a
+    name: Cert A
+    issuer: Issuer A
+    date: "2022-03"

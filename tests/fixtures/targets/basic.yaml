@@ -1,0 +1,18 @@
+jd: null
+max_pages: 1
+sections: [skills, experience, summary, projects, education, certifications]
+summary: sum-a
+skills: [sk-fastapi, sk-python, sk-cpp]
+experience:
+  - ref: exp-a
+    bullets: [exp-a-02, exp-a-01]
+  - ref: exp-b
+projects:
+  - ref: prj-a
+education:
+  - ref: edu-a
+    details: []
+certifications: [cert-a]
+overrides:
+  - ref: exp-a-01
+    text: Did thing 1, rewritten for this target.

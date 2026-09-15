@@ -1,0 +1,41 @@
+# A target = one job's resume, as a selection and ordering over ids in data/master.yaml.
+# Nothing here is a career fact. `cvops build example` compiles it to out/example.pdf.
+
+jd: jds/example.md          # used by `cvops match` / `tailor` (P3)
+max_pages: 1
+paper: a4
+skills_heading: Technical Skills
+
+# Section order is a ranking lever: skills stay high so parsers weight them early.
+sections: [summary, skills, experience, projects, education, certifications]
+
+summary: sum-backend
+
+# Order = order printed. Lead with the terms the JD uses.
+skills:
+  - sk-python
+  - sk-fastapi
+  - sk-postgresql
+  - sk-redis
+  - sk-docker
+  - sk-kubernetes
+  - sk-aws
+  - sk-github-actions
+
+experience:
+  - ref: exp-acme
+    bullets: [exp-acme-01, exp-acme-03, exp-acme-02]   # subset + order
+  - ref: exp-globex
+    bullets: [exp-globex-01, exp-globex-02]
+
+projects:
+  - ref: prj-cvops
+
+education:
+  - ref: edu-btech
+    details: []                 # just the degree line
+
+certifications: [cert-aws-saa]
+
+# The only place text may differ from master. Every override is reported by lint (L9).
+overrides: []

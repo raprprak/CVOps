@@ -1,0 +1,74 @@
+((# CVOps ATS single-column template.
+   Every value in `r`, `contact_items` and `skill_lines` is already Typst-escaped by
+   render.py; `*_code` fields and `doc_*` are escaped for string literals. Print raw.
+   Order of printed strings MUST match ResolvedResume.reading_order() — the linter's
+   round-trip and reading-order rules (L1/L2) depend on it. #))
+#set document(title: "<< doc_title >>", author: "<< doc_author >>")
+#set page(paper: "<< r.paper >>", margin: (x: 1.6cm, y: 1.4cm))
+#set text(font: ("Helvetica", "Arial", "Liberation Sans", "DejaVu Sans"), size: 10pt, lang: "en", hyphenate: false)
+#set par(justify: false, leading: 0.5em)
+#set smartquote(enabled: false)
+#set list(indent: 0.6em, body-indent: 0.5em, marker: [•])
+#show heading.where(level: 1): it => block(below: 0.35em)[
+  #text(size: 16pt, weight: "bold")[#it.body]
+]
+#show heading.where(level: 2): it => block(above: 0.9em, below: 0.4em)[
+  #text(size: 11pt, weight: "bold")[#it.body]
+  #v(-0.55em)
+  #line(length: 100%, stroke: 0.5pt)
+]
+#show link: it => underline(it)
+
+= << r.basics.name >>
+<< contact_items | join(" | ") >>
+
+((* for section in r.sections *))
+((* if section == "summary" *))
+== Summary
+<< r.summary.text >>
+
+((* elif section == "skills" *))
+== << r.skills_heading >>
+<< skill_lines | join(" \\\n") >>
+
+((* elif section == "experience" *))
+== Experience
+((* for e in r.experience *))
+#block(breakable: false, above: 0.7em, below: 0.25em)[
+  *<< e.title >>*, << e.company >>((* if e.location *)) — << e.location >>((* endif *)) #h(1fr) << e.dates >>
+]
+((* for b in e.bullets *))
+- << b.text >>
+((* endfor *))
+((* endfor *))
+
+((* elif section == "projects" *))
+== Projects
+((* for p in r.projects *))
+#block(breakable: false, above: 0.7em, below: 0.25em)[
+  *<< p.name >>*((* if p.url *)) — #link("<< p.url_code >>")[<< p.url >>]((* endif *))((* if p.dates *)) #h(1fr) << p.dates >>((* endif +*))
+]
+((* for b in p.bullets *))
+- << b.text >>
+((* endfor *))
+((* endfor *))
+
+((* elif section == "education" *))
+== Education
+((* for ed in r.education *))
+#block(breakable: false, above: 0.7em, below: 0.25em)[
+  *<< ed.degree >>((* if ed.field *)), << ed.field >>((* endif *))*, << ed.institution >>((* if ed.location *)) — << ed.location >>((* endif *))((* if ed.dates *)) #h(1fr) << ed.dates >>((* endif +*))
+]
+((* for d in ed.details *))
+- << d.text >>
+((* endfor *))
+((* endfor *))
+
+((* elif section == "certifications" *))
+== Certifications
+((* for c in r.certifications *))
+- << c.name >>((* if c.issuer *)), << c.issuer >>((* endif *))((* if c.date *)) (<< c.date >>)((* endif *))
+((* endfor *))
+
+((* endif *))
+((* endfor *))
