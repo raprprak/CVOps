@@ -77,4 +77,4 @@ Stack-specific and domain conventions live in `.claude/rules/` (kept out of this
 `.claudeignore` (root) excludes `node_modules/`, `.venv/`, build output (`dist/`, `build/`, `.next/`, `out/`), logs, large fixtures and binary assets from discovery — keep it current as the pipeline produces compiled artifacts.
 
 ## Status
-P0 done (2026-09-15): Python project flattened to the repo root as a CLI, FastAPI stub removed, Typst chosen, plan written. Pipeline implementation starts at P1 — see `docs/PLAN.md` for phases and exit criteria.
+P0-P2 done (2026-09-15): CLI project flattened to the repo root, Typst chosen, plan written (P0). Pydantic models, resolve.py, Typst render pipeline, `cvops build`/`show` (P1). `services/ats_lint.py` (rules L1-L10, two independent text extractors: pdftotext + pdfplumber), `cvops lint`, GitHub Actions CI (P2). 34 unit tests passing against pydantic/jinja2/pypdf/pdfplumber/reportlab already available; not run in-session: `uv sync`, real `typst` compiles, `pytest`/`ruff` via uv (PyPI was unreachable from the assistant's shells -- see chat). Next: P3 (`match.py` JD keyword coverage, `tailor.py`) — see `docs/PLAN.md`.

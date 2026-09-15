@@ -18,6 +18,7 @@ from cvops.core.files import (
     target_path,
 )
 from cvops.models.resolved import ResolvedResume
+from cvops.services import ats_lint
 from cvops.services.render import PDF_STANDARDS, RenderError, compile_pdf, render_typ
 from cvops.services.resolve import ResolveError, resolve
 
@@ -62,6 +63,22 @@ def _resolve_slug(slug: str, data_dir: Path) -> ResolvedResume:
         _fail(str(exc))
 
 
+def _compile_one(
+    name: str, data_dir: Path, out_dir: Path, standards: tuple[str, ...]
+) -> tuple[ResolvedResume, bytes]:
+    resume = _resolve_slug(name, data_dir)
+    source = render_typ(resume)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    typ_path = out_dir / f"{name}.typ"
+    typ_path.write_text(source, encoding="utf-8")
+    try:
+        pdf = compile_pdf(source, standards=standards)
+    except RenderError as exc:
+        _fail(f"{name}: typst failed (source kept at {typ_path}):\n{exc}")
+    (out_dir / f"{name}.pdf").write_bytes(pdf)
+    return resume, pdf
+
+
 @app.command()
 def build(
     slug: SlugArg = None,
@@ -73,18 +90,37 @@ def build(
     """Compile one target (or all) to out/<slug>.pdf; the Typst source is kept beside it."""
     standards = PDF_STANDARDS if ua else ()
     for name in _slugs(slug, all_targets, data_dir):
-        resume = _resolve_slug(name, data_dir)
-        source = render_typ(resume)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        typ_path = out_dir / f"{name}.typ"
-        typ_path.write_text(source, encoding="utf-8")
-        try:
-            pdf = compile_pdf(source, standards=standards)
-        except RenderError as exc:
-            _fail(f"{name}: typst failed (source kept at {typ_path}):\n{exc}")
-        pdf_path = out_dir / f"{name}.pdf"
-        pdf_path.write_bytes(pdf)
-        typer.echo(f"built {pdf_path} ({len(pdf):,} bytes)")
+        _, pdf = _compile_one(name, data_dir, out_dir, standards)
+        typer.echo(f"built {out_dir / f'{name}.pdf'} ({len(pdf):,} bytes)")
+
+
+@app.command()
+def lint(
+    slug: SlugArg = None,
+    all_targets: AllOpt = False,
+    data_dir: DataDir = Path("data"),
+    out_dir: OutDir = Path("out"),
+    ua: Annotated[bool, typer.Option("--ua/--no-ua", help="Export as PDF/UA-1")] = True,
+) -> None:
+    """Build one target (or all) and run the ATS lint rules (L1-L10) against the PDF.
+
+    Exits non-zero if any target has an error-level finding -- this is what CI runs.
+    """
+    standards = PDF_STANDARDS if ua else ()
+    had_errors = False
+    for name in _slugs(slug, all_targets, data_dir):
+        resume, pdf = _compile_one(name, data_dir, out_dir, standards)
+        result = ats_lint.lint(resume, pdf)
+        for finding in result.findings:
+            marker = "error" if finding.level == "error" else "warn "
+            typer.echo(f"{name}: [{marker}][{finding.rule}] {finding.message}")
+        status = "FAIL" if not result.ok else "ok"
+        typer.echo(
+            f"{name}: {status} ({len(result.errors)} error(s), {len(result.warnings)} warning(s))"
+        )
+        had_errors = had_errors or not result.ok
+    if had_errors:
+        raise typer.Exit(code=1)
 
 
 @app.command()

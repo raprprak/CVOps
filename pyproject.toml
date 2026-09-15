@@ -20,6 +20,7 @@ cvops = "cvops.cli:app"
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
+    "reportlab>=4.4.0",  # test-only: synthesizes PDFs for ats_lint unit tests, not a runtime dep
     "ruff>=0.16.7",
 ]
 

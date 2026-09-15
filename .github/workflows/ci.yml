@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  build-and-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install poppler-utils
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --all-groups
+
+      - name: Ruff check
+        run: uv run ruff check src tests
+
+      - name: Ruff format --check
+        run: uv run ruff format --check src tests
+
+      - name: Unit tests
+        run: uv run pytest -v
+
+      - name: Build every target
+        run: uv run cvops build --all
+
+      - name: Lint every target (ATS compliance, L1-L10)
+        run: uv run cvops lint --all
+
+      - name: Upload compiled PDFs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resumes
+          path: out/*.pdf
+          if-no-files-found: warn
