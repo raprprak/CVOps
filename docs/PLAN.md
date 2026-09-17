@@ -1,6 +1,6 @@
 # CVOps — Project Plan
 
-_Status: v1.2, 2026-09-15 — P0-P3 implemented (unverified: `uv sync` and a real Typst compile did not run in the assistant's sandbox -- PyPI unreachable). Provisional by design — every decision below carries the condition that would reopen it._
+_Status: v1.3, 2026-09-17 — P0-P3 implemented; a real `uv sync` (on the developer's own machine) produced a working `.venv` with every dependency at pinned versions, and the assistant re-verified its Typst/pypdf/pdfplumber calls against those exact installed APIs, but `pytest`/`cvops build`/`cvops lint` have still never actually been executed -- neither of the assistant's shells can run this venv or reach PyPI/GitHub themselves. `docs/ats-field-tests.md` scaffolded, still empty. Provisional by design — every decision below carries the condition that would reopen it._
 
 ## Thesis
 
