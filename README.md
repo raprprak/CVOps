@@ -26,5 +26,8 @@ Edit `data/master.yaml` with your real career data, then `data/targets/example.y
 new targets) to build a resume for a specific job. `cvops lint` exits non-zero on any
 error-level finding — that's what CI (`.github/workflows/ci.yml`) runs on every push.
 
+Full setup, command reference, day-to-day workflow, CI, and troubleshooting:
+[docs/RUNNING.md](docs/RUNNING.md).
+
 Plan, decisions and what would reopen them: [docs/PLAN.md](docs/PLAN.md). ATS layout rules and
 the full L1-L10 rule list: [.claude/rules/ats-compliance.md](.claude/rules/ats-compliance.md).
