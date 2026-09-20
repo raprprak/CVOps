@@ -73,6 +73,8 @@ Stack-specific and domain conventions live in `.claude/rules/` (kept out of this
 - [.claude/rules/context.md](.claude/rules/context.md) — Graphify discovery policy (`graphify-out/`)
 - [.claude/rules/frontend.md](.claude/rules/frontend.md) — parked Next.js scaffold
 
+Apply the **ponytail** skill (simplest solution that works; reuse before writing) to every code change, Python and frontend.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.

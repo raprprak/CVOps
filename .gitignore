@@ -9,7 +9,13 @@ dist/
 # Compiled resumes and Typst intermediates
 out/
 
+# Uploaded resumes and their parsed drafts (personal data)
+data/imports/
+
 # OS / editor
 .DS_Store
 .vscode/
 .idea/
+
+# Real career data: kept out of git (private per-person input, not source code)
+data/master.yaml

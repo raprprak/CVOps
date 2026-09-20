@@ -33,7 +33,7 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-ring: var(--ring);
-  --font-sans: var(--font-plex-sans);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-jetbrains-mono);
 }
 
