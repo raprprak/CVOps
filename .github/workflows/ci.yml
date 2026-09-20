@@ -43,11 +43,13 @@ jobs:
       - name: Unit tests
         run: uv run pytest -v
 
-      - name: Build every target
-        run: uv run cvops build --all
+      # data/master.yaml is personal and gitignored, so CI runs the pipeline on the checked-in
+      # fixtures rather than the author's real resume.
+      - name: Build every target (fixtures)
+        run: uv run cvops build --all --data-dir tests/fixtures
 
       - name: Lint every target (ATS compliance, L1-L10)
-        run: uv run cvops lint --all
+        run: uv run cvops lint --all --data-dir tests/fixtures
 
       - name: Upload compiled PDFs
         if: always()

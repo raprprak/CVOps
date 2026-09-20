@@ -20,7 +20,7 @@
 #show link: it => underline(it)
 
 = << r.basics.name >>
-<< contact_items | join(" | ") >>
+((* for c in contact_items *))#box[<< c >>]((* if not loop.last *)) | ((* endif *))((* endfor *))
 
 ((* for section in r.sections *))
 ((* if section == "summary" *))

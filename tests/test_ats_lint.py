@@ -88,6 +88,34 @@ def test_single_column_does_not_flag_right_aligned_dates() -> None:
     assert findings == []
 
 
+def test_single_column_does_not_flag_same_width_right_aligned_dates() -> None:
+    """The real pattern: every entry's date has the same format, hence nearly the same width, so
+    right-aligned they start at the same x0 on every row. That recurrence used to look like a second
+    column (real resumes failed L3); date fragments are not counted."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen import canvas
+
+    buf = __import__("io").BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    width, height = A4
+    rows = [
+        ("Engineering Lead, Acme Analytics", "Oct 2023 - Dec 2025"),
+        ("Senior Engineer, Globex Payments", "Nov 2018 - Jan 2022"),
+        ("Engineer, Beta Inc", "Aug 2016 - Oct 2018"),
+    ]
+    y = height - 60
+    for left, right in rows:
+        c.drawString(60, y, left)
+        c.drawRightString(width - 60, y, right)
+        y -= 16
+        c.drawString(60, y, "- a bullet with a number 42 in it")
+        y -= 20
+    c.showPage()
+    c.save()
+
+    assert ats_lint.check_single_column(ats_lint.extract(buf.getvalue())) == []
+
+
 def test_standard_headings(master) -> None:
     good = Target.model_validate({"skills": ["sk-python"], "skills_heading": "Technical Skills"})
     resume = resolve(master, good, slug="t")

@@ -102,6 +102,11 @@ class ExtractedPage:
 _COLUMN_GAP_PT = 24.0
 _ROW_TOLERANCE_PT = 3.0
 
+# A date (range) as the template prints it: "Jan 2021 - Present", "2015 - 2019", "Jun 2019".
+# Right-aligned dates are the one thing that legitimately sits far from the left margin.
+_MONTH_YEAR = r"(?:[A-Z][a-z]{2,8}\.? )?\d{4}"
+_DATE_FRAGMENT = re.compile(rf"{_MONTH_YEAR}(?:\s*[–—-]\s*(?:{_MONTH_YEAR}|Present|Current))?")
+
 
 def _row_segments(words: list[dict]) -> list[dict]:
     """Group words into visual rows by `top`, then split each row wherever the gap to
@@ -239,7 +244,12 @@ def check_single_column(pages: list[ExtractedPage], *, bucket_pt: float = 6.0) -
     real problem is a *second x-position that recurs across multiple rows*, i.e. an
     actual column of content running down the page rather than a one-off right-aligned
     token. That recurrence, not a single line's offset, is the multi-column signature
-    the ATS-compliance rule describes ("columns interleave text")."""
+    the ATS-compliance rule describes ("columns interleave text").
+
+    Right-aligned dates do recur (same format, so nearly the same width and x0 on every
+    entry), so date fragments are left out of the count: a date on the same line as its
+    title is read in order and interleaves nothing. Any other text in a second column
+    is still flagged. Known limit: a column made only of dates would pass."""
     findings: list[Finding] = []
     for page in pages:
         if not page.plumber_lines:
@@ -253,6 +263,8 @@ def check_single_column(pages: list[ExtractedPage], *, bucket_pt: float = 6.0) -
         for row_segments in rows.values():
             row_segments.sort(key=lambda s: s["x0"])
             for seg in row_segments[1:]:  # every segment after the first on this row
+                if _DATE_FRAGMENT.fullmatch(seg["text"].strip()):
+                    continue
                 bucket = round((seg["x0"] - baseline) / bucket_pt) * bucket_pt
                 secondary_buckets.setdefault(bucket, []).append(seg)
 
