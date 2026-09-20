@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
-import { ApiError, Overview, TargetInfo, deleteTarget, getOverview, pdfUrl } from "@/lib/api";
+import { ApiError, Overview, TargetInfo, buildTarget, deleteTarget, getOverview, pdfUrl } from "@/lib/api";
 import { btn, cta, glass, mesh } from "@/lib/glass";
 import { ParticleMorph, pop, rise, stagger } from "@/lib/fx";
+import { ActionMenu } from "@/lib/ui";
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
@@ -56,37 +57,61 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function ResumeCard({ t, onDeleted }: { t: TargetInfo; onDeleted: (slug: string, o: Overview) => void }) {
-  const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const remove = async () => {
-    setBusy(true);
-    setErr(null);
-    try {
-      const { overview } = await deleteTarget(t.slug);
-      onDeleted(t.slug, overview);
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : "backend unreachable");
-      setBusy(false);
-    }
-  };
-
+function DocIcon() {
   return (
-    // layout: siblings slide into the gap; exit: this card fades and shrinks (AnimatePresence)
+    <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+      <path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M14 3v5h5M8.5 13h7M8.5 17h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function OpenIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden="true">
+      <path d="M11 4h5v5M16 4l-7 7M8 5H5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl bg-white/5 px-3 py-2">
+      <dt className="text-xs text-slate-300">{label}</dt>
+      <dd className="text-lg font-semibold tabular-nums text-white">{value}</dd>
+    </div>
+  );
+}
+
+function ResumeCard({
+  t, onDeleted, onRefreshed,
+}: {
+  t: TargetInfo;
+  onDeleted: (slug: string, o: Overview) => void;
+  onRefreshed: (o: Overview) => void;
+}) {
+  return (
+    // rises in with the list, lifts on hover, slides into gaps (layout) and fades out on delete
     <motion.li
       layout
       variants={rise}
-      whileHover={{ y: -3 }}
+      whileHover={{ y: -4 }}
       exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.25 } }}
       transition={{ layout: { type: "spring", stiffness: 300, damping: 34 } }}
-      className={`${glass} flex min-w-0 flex-col gap-3 p-4`}
+      className={`${glass} flex min-w-0 flex-col gap-4 p-5`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <h3 className="min-w-0 font-mono text-base font-semibold text-white [overflow-wrap:anywhere]">{t.slug}</h3>
+      <div className="flex items-start gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-linear-to-br from-blue-500/40 to-orange-500/40 text-white">
+          <DocIcon />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-mono text-base font-semibold text-white [overflow-wrap:anywhere]">{t.slug}</h3>
+          <p className="text-sm text-slate-300">
+            {t.version ? `${t.version}${t.updated ? ` · ${fmt(t.updated)}` : ""}` : "Uncommitted"}
+          </p>
+        </div>
         <span
-          className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+          className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
             t.valid ? "bg-emerald-400/15 text-emerald-200" : "bg-red-400/15 text-red-200"
           }`}
         >
@@ -95,58 +120,73 @@ function ResumeCard({ t, onDeleted }: { t: TargetInfo; onDeleted: (slug: string,
         </span>
       </div>
 
-      <p className="text-sm text-slate-200">
-        {t.version ? `${t.version}${t.updated ? ` · ${fmt(t.updated)}` : ""}` : "Uncommitted"}
-      </p>
-
       {t.valid ? (
-        <dl className="grid grid-cols-3 gap-2 text-sm">
-          <div>
-            <dt className="text-slate-300">Bullets</dt>
-            <dd className="font-semibold tabular-nums">{t.bullets}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-300">Skills</dt>
-            <dd className="font-semibold tabular-nums">{t.skills}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-300">Max pages</dt>
-            <dd className="font-semibold tabular-nums">{t.max_pages}</dd>
-          </div>
+        <dl className="grid grid-cols-3 gap-2">
+          <Metric label="Bullets" value={t.bullets} />
+          <Metric label="Skills" value={t.skills} />
+          <Metric label="Max pages" value={t.max_pages} />
         </dl>
       ) : (
         <p className="whitespace-pre-line text-sm text-red-200 [overflow-wrap:anywhere]">{t.problem}</p>
       )}
 
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-white/20 pt-3 text-sm text-slate-200">
-        <span>
+      <div className="mt-auto flex items-center gap-2 border-t border-white/15 pt-4 text-sm text-slate-200">
+        <span className="flex items-center gap-2">
+          <span className={`h-2 w-2 rounded-full ${t.built_at ? "bg-emerald-400" : "bg-amber-400"}`} aria-hidden="true" />
           {t.built_at
             ? `PDF built ${fmt(t.built_at)} · ${Math.round((t.pdf_bytes ?? 0) / 1024)} KB`
             : "PDF not built yet"}
         </span>
-        {t.built_at && (
-          <a href={pdfUrl(t.slug)} target="_blank" rel="noopener noreferrer" className={btn}>
-            Open PDF
-          </a>
-        )}
       </div>
 
-      {err && <p role="alert" className="text-sm text-red-200 [overflow-wrap:anywhere]">{err}</p>}
-      {confirming ? (
-        <div role="alertdialog" aria-label={`Delete ${t.slug}`} className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-slate-100">Delete this version? Files move to data/.trash.</span>
-          <button type="button" onClick={remove} disabled={busy} className={`${btn} border-red-300/50 text-red-200`}>
-            {busy ? "Deleting..." : "Yes, delete"}
-          </button>
-          <button type="button" onClick={() => setConfirming(false)} disabled={busy} className={btn} autoFocus>
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <button type="button" onClick={() => setConfirming(true)} className={`${btn} self-start text-red-200`}>
-          Delete
-        </button>
-      )}
+      <ActionMenu
+        leading={
+          t.built_at ? (
+            <a
+              href={pdfUrl(t.slug)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${btn} inline-flex flex-1 items-center justify-center gap-2`}
+            >
+              <OpenIcon />
+              Open PDF
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled
+              title="Not built yet: Manage, then Rebuild PDF"
+              className={`${btn} inline-flex flex-1 items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              <OpenIcon />
+              Open PDF
+            </button>
+          )
+        }
+        items={[
+          {
+            label: "Rebuild PDF",
+            hint: "build & lint",
+            disabled: !t.valid,
+            onSelect: async () => {
+              const r = await buildTarget(t.slug);
+              onRefreshed(await getOverview());
+              return r.lint_ok
+                ? "Built · lint OK"
+                : `Built · lint failed (${r.errors.length} error${r.errors.length === 1 ? "" : "s"})`;
+            },
+          },
+          {
+            label: "Delete version",
+            danger: true,
+            confirm: "Delete this version? Files move to data/.trash.",
+            onSelect: async () => {
+              const { overview } = await deleteTarget(t.slug);
+              onDeleted(t.slug, overview);
+            },
+          },
+        ]}
+      />
     </motion.li>
   );
 }
@@ -212,15 +252,17 @@ export default function Dashboard() {
             </section>
 
             <section aria-labelledby="resumes-h">
-              <h2 id="resumes-h" className="mb-3 text-lg font-semibold text-white">Resumes</h2>
+              <h2 id="resumes-h" className="text-lg font-semibold text-white">Resume versions</h2>
+              <p className="mb-3 text-sm text-slate-200">Each version selects content from your master profile and builds to an ATS-safe PDF.</p>
               <motion.ul variants={stagger} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <AnimatePresence>
                   {data.targets.map((t) => (
                     <ResumeCard
                       key={t.slug}
                       t={t}
+                      onRefreshed={setData}
                       // One state update: the tiles get their new numbers (and count to them) while
-                      // the card exits and its siblings slide into place.
+                      // the card fades out and its siblings slide into place.
                       onDeleted={(slug, o) =>
                         setData((d) => d && { master: o.master, targets: d.targets.filter((x) => x.slug !== slug) })
                       }

@@ -14,10 +14,10 @@ import {
   ShaderMaterial,
   WebGLRenderer,
 } from "three";
-import { page, sphere, type Shape } from "./shapes";
+import { resumePage, sphere, type Shape } from "./shapes";
 
 export interface MorphOptions {
-  count?: number; // particles; 6000 is smooth on a laptop iGPU
+  count?: number; // particles; the resume skeleton needs ~9000 to read as text
   from?: Shape;
   to?: Shape;
   colors?: [string, string]; // particles blend from the first to the second as they morph
@@ -39,8 +39,9 @@ uniform float uSize;
 uniform float uPixelRatio;
 attribute vec3 aTarget;
 attribute float aRand;
+attribute float aTint;
 varying float vMix;
-varying float vRand;
+varying float vTint;
 
 void main() {
   // Staggered per particle, so the cloud peels away instead of moving as one block.
@@ -70,7 +71,7 @@ void main() {
   gl_Position = projectionMatrix * mv;
   gl_PointSize = uSize * uPixelRatio / -mv.z;
   vMix = t;
-  vRand = aRand;
+  vTint = aTint;
 }
 `;
 
@@ -78,12 +79,12 @@ const FRAG = /* glsl */ `
 uniform vec3 uA;
 uniform vec3 uB;
 varying float vMix;
-varying float vRand;
+varying float vTint;
 
 void main() {
   float d = length(gl_PointCoord - 0.5);
   if (d > 0.5) discard;
-  vec3 col = mix(uA, uB, clamp(vRand * 0.6 + vMix * 0.5, 0.0, 1.0));
+  vec3 col = mix(uA, uB, clamp(vTint + vMix * 0.5, 0.0, 1.0));
   gl_FragColor = vec4(col, smoothstep(0.5, 0.05, d) * 0.9);
   #include <colorspace_fragment>
 }
@@ -92,20 +93,25 @@ void main() {
 const EASE: [number, number, number, number] = [0.45, 0, 0.15, 1];
 
 export function createParticleMorph(canvas: HTMLCanvasElement, opts: MorphOptions = {}): Morph {
-  const { count = 6000, from = page(), to = sphere(), colors = ["#60a5fa", "#fb923c"], size = 14 } = opts;
+  const { count = 9000, from = resumePage(), to = sphere(), colors = ["#60a5fa", "#fb923c"], size = 12 } = opts;
 
   const start = new Float32Array(count * 3);
   const target = new Float32Array(count * 3);
   const rand = new Float32Array(count);
+  const tint = new Float32Array(count);
   for (let i = 0; i < count; i++) {
-    start.set(from(i, count), i * 3);
-    target.set(to(i, count), i * 3);
+    const a = from(i, count);
+    const b = to(i, count);
+    start.set([a[0], a[1], a[2]], i * 3);
+    target.set([b[0], b[1], b[2]], i * 3);
     rand[i] = Math.random();
+    tint[i] = a[3] ?? rand[i] * 0.6; // shapes without a tint get a random cool-to-warm spread
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(start, 3));
   geometry.setAttribute("aTarget", new BufferAttribute(target, 3));
   geometry.setAttribute("aRand", new BufferAttribute(rand, 1));
+  geometry.setAttribute("aTint", new BufferAttribute(tint, 1));
 
   const uniforms = {
     uProgress: { value: 0 },
