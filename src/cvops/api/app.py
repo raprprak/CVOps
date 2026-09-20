@@ -133,21 +133,29 @@ class MatchResult(BaseModel):
 _MATCH_ORDER = (Status.MISSING, Status.MISSING_FROM_TARGET, Status.PRESENT_AS_ALIAS, Status.PRESENT)
 
 
-@app.get("/targets/{slug}/match")
-def match_target(slug: str, jd: str | None = None) -> MatchResult:
+class MatchRequest(BaseModel):
+    jd_text: str | None = None  # pasted directly -- takes priority when given
+    jd_path: str | None = None  # explicit path override, e.g. "jds/acme.md"
+
+
+@app.post("/targets/{slug}/match")
+def match_target(slug: str, req: MatchRequest) -> MatchResult:
     master = load_master(master_path(DATA_DIR))
     try:
         target = load_target(target_path(DATA_DIR, slug))
     except DataError as exc:
         raise HTTPException(404, str(exc)) from exc
     resume = resolve(master, target, slug=slug)
-    jd_arg = jd or target.jd
-    if not jd_arg:
-        raise HTTPException(400, "target has no jd: field and no ?jd= query param was given")
-    jd_path = DATA_DIR / jd_arg if (DATA_DIR / jd_arg).is_file() else Path(jd_arg)
-    if not jd_path.is_file():
-        raise HTTPException(404, f"job description not found: {jd_path}")
-    jd_text = jd_path.read_text(encoding="utf-8")
+    if req.jd_text:
+        jd_text = req.jd_text
+    else:
+        jd_arg = req.jd_path or target.jd
+        if not jd_arg:
+            raise HTTPException(400, "no jd_text pasted, and target has no jd: field or jd_path")
+        jd_path = DATA_DIR / jd_arg if (DATA_DIR / jd_arg).is_file() else Path(jd_arg)
+        if not jd_path.is_file():
+            raise HTTPException(404, f"job description not found: {jd_path}")
+        jd_text = jd_path.read_text(encoding="utf-8")
     report = run_match(resume, jd_text, master)
     lines = [
         MatchLine(section=ln.candidate.section, term=ln.candidate.term, status=status.value, note=ln.note)
