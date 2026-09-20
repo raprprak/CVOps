@@ -236,7 +236,7 @@ export const buildTarget = (slug: string) =>
   request<BuildResult>(`/targets/${slug}/build`, { method: "POST" });
 
 export const deleteTarget = (slug: string) =>
-  request<{ moved: string[] }>(`/targets/${slug}`, { method: "DELETE" });
+  request<{ moved: string[]; overview: Overview }>(`/targets/${slug}`, { method: "DELETE" });
 
 export const pdfUrl =(slug: string) => `${API_BASE}/targets/${slug}/pdf`;
 
