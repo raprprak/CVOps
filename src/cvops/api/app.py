@@ -258,6 +258,29 @@ def update_import(import_id: str, body: DraftUpdate) -> ImportDraft:
     return draft
 
 
+class NewDraft(BaseModel):
+    master: dict[str, Any]
+    name: str = Field(default="Resume builder", max_length=200)  # shown in the drafts list
+
+
+@app.post("/imports/draft")
+def create_draft(body: NewDraft) -> ImportDraft:
+    """A draft made in the browser builder, with no uploaded file.
+
+    Same lifecycle as an upload: `problems` lists what Master would reject, and nothing reaches
+    master.yaml except through /apply.
+    """
+    draft = ImportDraft(
+        id=secrets.token_hex(6),
+        filename=body.name,
+        imported_at=datetime.now(UTC).isoformat(timespec="seconds"),
+        problems=check(body.master),
+        master=body.master,
+    )
+    write_draft(DATA_DIR, draft)
+    return draft
+
+
 class ApplyRequest(BaseModel):
     slug: str = Field(pattern=ID_PATTERN)  # the new target; becomes a filename
     max_pages: int = Field(default=2, ge=1)
