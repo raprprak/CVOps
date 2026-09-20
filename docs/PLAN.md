@@ -1,6 +1,6 @@
 # CVOps — Project Plan
 
-_Status: v1.3, 2026-09-17 — P0-P3 implemented; a real `uv sync` (on the developer's own machine) produced a working `.venv` with every dependency at pinned versions, and the assistant re-verified its Typst/pypdf/pdfplumber calls against those exact installed APIs, but `pytest`/`cvops build`/`cvops lint` have still never actually been executed -- neither of the assistant's shells can run this venv or reach PyPI/GitHub themselves. `docs/ats-field-tests.md` scaffolded, still empty. Provisional by design — every decision below carries the condition that would reopen it._
+_Status: v1.4, 2026-09-20 — P0-P3 implemented (still unexecuted by the assistant, see below); P4's backend+frontend built at Ravi's explicit request, reopening decision 01/06 (was "reopen if it becomes something others use" -- the actual trigger was just wanting a UI). `docs/ats-field-tests.md` scaffolded, still empty. Provisional by design — every decision below carries the condition that would reopen it._
 
 ## Thesis
 
@@ -17,12 +17,12 @@ CVOps treats these as a CI pipeline treats code: the master data is the source, 
 
 | # | Decision | Why | Reopen if |
 |---|----------|-----|-----------|
-| 01 | Personal tool, N=1. CLI-first. | The value is the pipeline; a UI solves a problem we don't have. | It becomes something others use. |
+| 01 | Personal tool, N=1. CLI-first, **plus a thin API + UI as of 2026-09-20** (reopened -- see 06). | The value is the pipeline; a UI solves a problem we don't have -- turned out not to matter, Ravi wanted one anyway. | Multi-user or a real deployment target would matter more now. |
 | 02 | Renderer: **Typst** via `typst-py`, not LaTeX/tectonic. | Typst 0.14+ emits tagged PDFs by default (opt-in PDF/UA-1), compiles in milliseconds, one dependency, no `glyphtounicode` workaround needed. RenderCV made the same move for the same reasons. | A LaTeX template investment we want to keep, or a Typst limitation we hit in the single-column template. |
 | 03 | Data model: **master + targets**. Master is the superset (every role, every bullet, each with a stable ID and keyword tags). A target is a *selection and ordering over master IDs* for one JD, not a rewrite. | Makes "zero fabrication" a lint rule (every output bullet must trace to a master ID) instead of a prompt instruction; makes tailoring a reviewable git diff. | A real need for free-form per-target prose that can't be expressed as selection + explicitly marked overrides. |
 | 04 | Own ~100-line single-column Typst template; keep the Pydantic → Jinja2 → template → PDF shape. Not RenderCV as a library. | RenderCV's themes optimize for looks; we need to *enforce* ATS layout rules in the template. Small enough to own. | Template work balloons past a few hundred lines. |
 | 05 | No database. YAML in git is the store. (Carried from scaffold.) | N=1; git *is* the version history the project is named after. | See 01. |
-| 06 | Frontend parked (scaffold stays in the repo, gets no work); the FastAPI stub and its deps were removed in P0 rather than carried dead. | See 01. Re-enter via a thin API over the same library if a UI is ever wanted. | See 01. |
+| 06 | **Reopened 2026-09-20.** `src/cvops/api/app.py`: thin FastAPI wrapping the exact `services/` calls the CLI makes, no logic duplicated. `frontend/`: the existing Next.js scaffold, filled in (no new npm deps -- plain Tailwind, native HTML), one dashboard with 4 tabs (Overview, Build & Lint, Match, Tailor). Design via the `ui-ux-pro-max` skill: dark Minimalism/Swiss-style, JetBrains Mono + IBM Plex Sans. | Ravi asked for it directly -- see 01. | Auth, multi-user, or a deploy target would need real design work; today it's `localhost:8000` <-> `localhost:3000`, one person, one machine. |
 | 07 | JSON Resume is an import/export format, not the internal model. | It lacks IDs and tags, which 03 depends on. | Never — cheap either way. |
 
 Cheap, reversible calls (picked and moved in P0): Python project flattened from `backend/` to the repo root (`src/cvops/`); CLI framework Typer; layout analysis via `pdfplumber`.
@@ -135,7 +135,7 @@ Errors fail the build; warnings are reported. Each rule is a pure function over 
 
 **P3 — Match and tailor.** `skills.yaml`, `match.py`, coverage report in the terminal, `tailor.py` writing a proposed target. Done when `cvops match` on a real JD shows correct present/alias/missing buckets and `cvops tailor` output passes lint unchanged.
 
-**P4 — Deferred, in likely order.** `cvops watch` (rebuild on save; a PDF viewer is the UI). DOCX target from the same `ResolvedResume` — only when a real portal rejects or mangles the PDF. LLM-assisted rewriting behind the provenance gate. Thin FastAPI over the library, then the UI, only if decision 01 changes.
+**P4 — In progress.** Backend + frontend done (2026-09-20): `src/cvops/api/app.py` + `frontend/`, see decision 06. Verified as far as sandboxes allow -- resolve/render_typ/non-PDF-lint/match/tailor run for real against `data/master.yaml`; `tsc`/`eslint` clean against the frontend; `compile_pdf`/PDF-dependent lint rules/`next build`/the FastAPI routing layer itself all still need Ravi's machine (typst, pdftotext, and the macOS-arm64 SWC binary aren't available in any assistant-controlled shell -- same class of gap as `pytest` since P1). Still deferred: `cvops watch`, a DOCX target, LLM-assisted rewriting behind the provenance gate.
 
 ## Ground truth
 
