@@ -128,7 +128,10 @@ def _git_version(path: Path) -> tuple[str | None, str | None]:
     try:
         log = subprocess.run(
             ["git", "log", "--format=%h %cI", "--", str(path)],
-            capture_output=True, text=True, timeout=5, check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=True,
         ).stdout.splitlines()
     except (OSError, subprocess.SubprocessError):
         return None, None
@@ -464,9 +467,11 @@ def match_target(slug: str, req: MatchRequest) -> MatchResult:
         jd_text = jd_path.read_text(encoding="utf-8")
     report = run_match(resume, jd_text, master)
     lines = [
-        MatchLine(section=ln.candidate.section, term=ln.candidate.term, status=status.value, note=ln.note)
+        MatchLine(
+            section=ln.candidate.section, term=ln.candidate.term, status=status.value, note=ln.note
+        )
         for status in _MATCH_ORDER
-        for ln in sorted(report.by_status(status), key=lambda l: -l.candidate.weight)
+        for ln in sorted(report.by_status(status), key=lambda x: -x.candidate.weight)
     ]
     return MatchResult(score=report.score, lines=lines)
 

@@ -133,7 +133,10 @@ def merge(master: Master, draft: Master, *, max_pages: int = 2) -> Merged:
         sid = known_skills.get(_norm(sk.name))
         if sid is None:
             new = Skill(
-                id=m.fresh(sk.id), name=sk.name, category=sk.category, tags=sk.tags,
+                id=m.fresh(sk.id),
+                name=sk.name,
+                category=sk.category,
+                tags=sk.tags,
                 aliases=sk.aliases,
             )
             out.skills.append(new)
@@ -152,8 +155,12 @@ def merge(master: Master, draft: Master, *, max_pages: int = 2) -> Merged:
         )
         if role is None:
             role = Experience(
-                id=m.fresh(e.id), company=e.company, title=e.title, location=e.location,
-                start=e.start, end=e.end,
+                id=m.fresh(e.id),
+                company=e.company,
+                title=e.title,
+                location=e.location,
+                start=e.start,
+                end=e.end,
             )
             _place(out.experience, role, lambda x: f"{x.end or '9999-99'} {x.start}")
             m.added["roles"] += 1
@@ -166,7 +173,11 @@ def merge(master: Master, draft: Master, *, max_pages: int = 2) -> Merged:
         proj = next((x for x in out.projects if _norm(x.name) == _norm(p.name)), None)
         if proj is None:
             proj = Project(
-                id=m.fresh(p.id), name=p.name, url=p.url, start=p.start, end=p.end,
+                id=m.fresh(p.id),
+                name=p.name,
+                url=p.url,
+                start=p.start,
+                end=p.end,
             )
             out.projects.append(proj)
             m.added["projects"] += 1
@@ -186,8 +197,13 @@ def merge(master: Master, draft: Master, *, max_pages: int = 2) -> Merged:
         )
         if edu is None:
             edu = Education(
-                id=m.fresh(ed.id), institution=ed.institution, degree=ed.degree, field=ed.field,
-                location=ed.location, start=ed.start, end=ed.end,
+                id=m.fresh(ed.id),
+                institution=ed.institution,
+                degree=ed.degree,
+                field=ed.field,
+                location=ed.location,
+                start=ed.start,
+                end=ed.end,
             )
             _place(out.education, edu, lambda x: x.end or x.start or "")
             m.added["education"] += 1
@@ -200,7 +216,11 @@ def merge(master: Master, draft: Master, *, max_pages: int = 2) -> Merged:
         cert = next((x for x in out.certifications if _norm(x.name) == _norm(c.name)), None)
         if cert is None:
             cert = Certification(
-                id=m.fresh(c.id), name=c.name, issuer=c.issuer, date=c.date, url=c.url,
+                id=m.fresh(c.id),
+                name=c.name,
+                issuer=c.issuer,
+                date=c.date,
+                url=c.url,
             )
             out.certifications.append(cert)
             m.added["certifications"] += 1
