@@ -155,8 +155,10 @@ export default function Dashboard() {
         {data && (
           <>
             <section aria-labelledby="master-h">
-              <h2 id="master-h" className="text-lg font-semibold text-white">Master profile</h2>
-              <p className="mb-3 text-sm text-slate-200">{data.master.name}</p>
+              <h2 id="master-h" className="text-lg font-semibold text-white">Your resumes</h2>
+              <p className="mb-3 text-sm text-slate-200">
+                {data.master.name} · distinct items used across the resumes below
+              </p>
               <dl className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <Stat label="Resumes" value={data.targets.length} />
                 <Stat label="Roles" value={data.master.roles} />

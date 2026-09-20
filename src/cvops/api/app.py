@@ -149,15 +149,9 @@ def overview() -> Overview:
         master = load_master(master_path(DATA_DIR))
     except DataError as exc:
         raise HTTPException(404, str(exc)) from exc
-    stats = MasterStats(
-        name=master.basics.name,
-        roles=len(master.experience),
-        projects=len(master.projects),
-        bullets=sum(1 for kind, _ in master.iter_entities() if kind == "bullet"),
-        skills=len(master.skills),
-        education=len(master.education),
-        certifications=len(master.certifications),
-    )
+    # Distinct master entities the existing resumes use -- master itself only grows, so its own
+    # counts would not move when a version is deleted.
+    used: dict[str, set[str]] = {k: set() for k in MasterStats.model_fields if k != "name"}
     targets: list[TargetInfo] = []
     for slug in list_target_slugs(DATA_DIR):
         path = target_path(DATA_DIR, slug)
@@ -178,7 +172,15 @@ def overview() -> Overview:
             info.max_pages = resume.max_pages
             info.skills = len(resume.skills)
             info.bullets = sum(1 for _ in resume.text_items()) - (resume.summary is not None)
+            used["roles"] |= {e.id for e in resume.experience}
+            used["projects"] |= {p.id for p in resume.projects}
+            used["skills"] |= {s.id for s in resume.skills}
+            used["education"] |= {e.id for e in resume.education}
+            used["certifications"] |= {c.id for c in resume.certifications}
+            summary_id = {resume.summary.id} if resume.summary else set()
+            used["bullets"] |= {t.id for t in resume.text_items()} - summary_id
         targets.append(info)
+    stats = MasterStats(name=master.basics.name, **{k: len(v) for k, v in used.items()})
     return Overview(master=stats, targets=targets)
 
 
