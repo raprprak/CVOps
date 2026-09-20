@@ -214,6 +214,12 @@ export const getImport = (id: string) => request<ImportDraft>(`/imports/${id}`);
 export const saveImport = (id: string, master: DraftMaster) =>
   request<ImportDraft>(`/imports/${id}`, { method: "PUT", body: JSON.stringify({ master }) });
 
+export const getMaster = () => request<{ basics: Basics }>("/master");
+
+// A draft made in the builder (no uploaded file); apply it like any import.
+export const createDraft = (master: DraftMaster, name: string) =>
+  request<ImportDraft>("/imports/draft", { method: "POST", body: JSON.stringify({ master, name }) });
+
 export const applyImport = (id: string, slug: string, maxPages: number) =>
   request<ApplyResult>(`/imports/${id}/apply`, {
     method: "POST",
