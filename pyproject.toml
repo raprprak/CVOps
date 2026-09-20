@@ -5,6 +5,7 @@ description = "Resume-as-code: compile, lint and JD-match ATS-safe resumes from 
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi>=0.115.0",
     "jinja2>=3.1.6",
     "pdfplumber>=0.11.0",
     "pydantic>=2.13.5",
@@ -12,6 +13,7 @@ dependencies = [
     "pyyaml>=6.0.3",
     "typer>=0.15.0",
     "typst>=0.14.0",
+    "uvicorn>=0.34.0",
 ]
 
 [project.scripts]
