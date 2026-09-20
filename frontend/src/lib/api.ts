@@ -235,7 +235,10 @@ export const getTarget = (slug: string) => request<ResolvedResume>(`/targets/${s
 export const buildTarget = (slug: string) =>
   request<BuildResult>(`/targets/${slug}/build`, { method: "POST" });
 
-export const pdfUrl = (slug: string) => `${API_BASE}/targets/${slug}/pdf`;
+export const deleteTarget = (slug: string) =>
+  request<{ moved: string[] }>(`/targets/${slug}`, { method: "DELETE" });
+
+export const pdfUrl =(slug: string) => `${API_BASE}/targets/${slug}/pdf`;
 
 export const matchTarget = (slug: string, jdText: string) =>
   request<MatchResult>(`/targets/${slug}/match`, {
