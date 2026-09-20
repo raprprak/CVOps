@@ -108,7 +108,7 @@ Provenance is structural: `resolve.py` produces a `ResolvedResume` where every b
 
 Errors fail the build; warnings are reported. Each rule is a pure function over `(ResolvedResume, pdf_bytes)` and unit-tested in isolation.
 
-- **L1 Round-trip** (error): every leaf string in the resolved resume appears in the extracted text, normalized for whitespace — checked with two independent extractors (`pdftotext` and `pypdf`) so a single extractor's quirk can't mask a failure. This is the automated notepad test.
+- **L1 Round-trip** (error): every leaf string in the resolved resume appears in the extracted text, normalized for whitespace — checked with two independent extractors (`pdftotext` and `pdfplumber`) so a single extractor's quirk can't mask a failure. This is the automated notepad test.
 - **L2 Reading order** (error): section headings and bullets appear in the extracted text in the same order as the source (monotonic index check).
 - **L3 Single column** (error): via `pdfplumber`, all text lines start within one left-margin band; no two lines share a y-range with disjoint x-ranges. Catches any layout regression that would interleave text.
 - **L4 Standard headings** (error): every top-level section title is in the dictionary {Summary, Experience, Education, Skills, Technical Skills, Projects, Certifications, Publications}.
@@ -121,31 +121,32 @@ Errors fail the build; warnings are reported. Each rule is a pure function over 
 
 ## Match and tailor
 
-`match` extracts keyword candidates from the JD: n-grams matched against `skills.yaml` (canonical + aliases), plus tech-looking tokens (CamelCase, dotted names, version numbers), minus a stoplist. It reports three buckets: **present** (exact string in the resolved resume), **present as alias** (you wrote "Postgres", JD says "PostgreSQL" — switch to the JD's form, since recruiter search is exact-string), and **missing** (in the JD, nowhere in master — a real gap, or something to add to master if true). Score is weighted coverage, with JD "requirements" sections weighted above "nice to have". No embeddings in v1: exact matching is both simpler and aligned with how recruiter search actually works.
+`match` extracts keyword candidates from the JD: known master skill names/aliases (high-confidence), plus tech-looking tokens (CamelCase, dotted names, version numbers, acronyms) not yet in master, minus a stoplist. It reports four buckets: **present** (exact string in the resolved resume), **present as alias** (you wrote "Postgres", JD says "PostgreSQL" — switch to the JD's form, since recruiter search is exact-string), **missing from target** (a real master skill, just not selected into this target), and **missing** (in the JD, nowhere in master — a real gap, or something to add to master if true). Score is weighted coverage, with JD "requirements" sections weighted above "nice to have". No embeddings: exact matching is both simpler and aligned with how recruiter search actually works.
 
-`tailor` takes master + JD and writes a *proposed* target file: selects roles and bullets whose tags cover the JD's keywords, orders Skills to lead with JD terms, and stops. You review the diff and commit. LLM-assisted bullet rewriting is deferred to P4 and, when it arrives, can only produce `overrides` — which L9 flags — so it can never fabricate silently.
+`tailor` takes master + JD and writes a *proposed* target file: selects roles and bullets whose tags cover the JD's keywords, orders Skills to lead with JD terms, and stops — it only ever selects/orders master ids, never writes an `override`. You review the diff and commit. LLM-assisted bullet rewriting is deferred and, when it arrives, can only produce `overrides` — which L9 flags — so it can never fabricate silently.
 
 ## Phases
 
-**P0 — Decide and align (now).** Confirm decisions 02–04. Update `CLAUDE.md` and `.claude/rules/{backend,ats-compliance}.md` to say Typst instead of tectonic/LaTeX. Add deps: `typst` (the `typst-py` binding — `compile()` takes `pdf_standards=["ua-1"]` and a fixed `timestamp`, which is what makes builds byte-reproducible; verify `uv add typst` works on your Mac, as PyPI wasn't reachable from the planning sandbox), `typer`, `pdfplumber`. Flatten to `src/cvops` if we take that reversible call. Done when the repo's own instructions match this plan and a hello-world `.typ` compiles through `typst-py`.
+**P0 — Decide and align. Done (2026-09-15).** Confirmed decisions 02–04. `CLAUDE.md` and `.claude/rules/{python,ats-compliance,context,frontend}.md` describe Typst, not tectonic/LaTeX. Flattened `backend/src/cvops` to `src/cvops` at the repo root.
 
-**P1 — Build.** Pydantic models for master/target, `resolve.py`, the single-column Typst template, `cvops build --target <slug>` and `--all`. Populate `data/master.yaml` with your real career data — the pipeline is only proven on real data. Done when a real target compiles to a one-page PDF that passes the manual notepad test.
+**P1 — Build. Done (2026-09-15).** Pydantic models for master/target, `resolve.py`, the single-column Typst template, `cvops build`/`show`. Real career data populated into `data/master.yaml` on 2026-09-17 (see Status history) — no placeholder data remains.
 
-**P2 — Lint and CI.** L1–L9 as pure functions with unit tests, including a fixture template that deliberately breaks L3 to prove the linter catches it. GitHub Actions: install uv + poppler, build every target, run lint, upload PDFs as artifacts, fail on any error. Done when CI is green on main and red on the broken fixture.
+**P2 — Lint and CI. Done (2026-09-15).** L1–L10 as pure functions with unit tests. GitHub Actions installs uv + poppler, builds every target, runs lint, uploads PDFs as artifacts, fails on any error.
 
-**P3 — Match and tailor.** `skills.yaml`, `match.py`, coverage report in the terminal, `tailor.py` writing a proposed target. Done when `cvops match` on a real JD shows correct present/alias/missing buckets and `cvops tailor` output passes lint unchanged.
+**P3 — Match and tailor. Done (2026-09-15).** `services/match.py`, `services/tailor.py`, `cvops match`/`tailor`.
 
 **P4 — In progress.** Backend + frontend done (2026-09-20): `src/cvops/api/app.py` + `frontend/`, see decision 06. Verified as far as sandboxes allow -- resolve/render_typ/non-PDF-lint/match/tailor run for real against `data/master.yaml`; `tsc`/`eslint` clean against the frontend; `compile_pdf`/PDF-dependent lint rules/`next build`/the FastAPI routing layer itself all still need Ravi's machine (typst, pdftotext, and the macOS-arm64 SWC binary aren't available in any assistant-controlled shell -- same class of gap as `pytest` since P1). Still deferred: `cvops watch`, a DOCX target, LLM-assisted rewriting behind the provenance gate.
 
 ## Ground truth
 
-Lint proves the PDF is *parseable*; only real portals prove it *parses the way they parse*. Keep a short log at `docs/ats-field-tests.md`: upload the compiled PDF to LinkedIn's resume import, a Workday "autofill with resume" flow, and a Greenhouse application, and record which fields populated correctly. Any field that fails becomes a new lint rule or template fix. This is the feedback loop the whole project is named after.
+Lint proves the PDF is *parseable*; only real portals prove it *parses the way they parse*. Keep a short log at `docs/ats-field-tests.md` (scaffolded 2026-09-17, still empty): upload the compiled PDF to LinkedIn's resume import, a Workday "autofill with resume" flow, and a Greenhouse application, and record which fields populated correctly. Any field that fails becomes a new lint rule or template fix. This is the feedback loop the whole project is named after.
 
 ## Open threads
 
 - DOCX: needed for "any portal in the world"? Unknown until a portal rejects the PDF. Deferred, but `ResolvedResume` is designed so a second renderer is cheap.
-- `skills.yaml` scope: hand-curated for your domain vs. seeded from a public taxonomy. Start hand-curated; it's your data.
+- `skills.yaml` scope: skills currently live inline in `master.yaml` rather than a separate canonical-names-and-aliases file — revisit if alias management outgrows that.
 - Whether `match` should score against the master (what you *could* claim) as well as the target (what you *did* claim). Probably both — the delta is exactly what `tailor` should surface.
+- **New:** this document's own Architecture/Lint/Match sections above still described the pre-P0 plan in a few places (fixed the L1-extractor and match-bucket-count mismatches in this edit) rather than the as-built P1-P3 code — worth a dedicated pass to reconcile the whole document with `src/cvops/` once, rather than patching it phase by phase.
 
 ## What this plan is not
 
