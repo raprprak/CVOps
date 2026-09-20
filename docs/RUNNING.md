@@ -112,6 +112,30 @@ graphify install && graphify hook install   # installs the git hook that keeps i
 Not required to build, lint, or use CVOps — it only helps an AI assistant explore the codebase
 faster.
 
+## Optional: web UI (backend + frontend)
+
+A thin FastAPI backend (`src/cvops/api/app.py`) wraps the same `resolve`/`render`/`lint`/
+`match`/`tailor` calls the CLI makes, and `frontend/` (the existing Next.js scaffold) is a
+small dashboard on top of it: pick a target, view its resolved data, build & see lint
+findings with an inline PDF preview, paste a JD and check keyword coverage, or propose a
+new tailored target. Nothing here replaces the CLI -- it's the same pipeline, driven from
+a browser instead of a terminal.
+
+```bash
+# terminal 1 -- backend, from the repo root
+uv sync                                              # picks up fastapi/uvicorn
+uv run uvicorn cvops.api.app:app --reload --port 8000
+
+# terminal 2 -- frontend
+cd frontend
+npm install                                          # first time only
+npm run dev
+```
+
+Open http://localhost:3000. The frontend talks to the backend at `http://localhost:8000`
+(hardcoded in `frontend/src/lib/api.ts` -- it's one developer on one machine, not worth an
+env var yet). Both are local-only dev servers; there's no deployment story for either.
+
 ## Troubleshooting
 
 - **`MissingToolError: pdftotext not found on PATH`** — poppler-utils isn't installed; see
