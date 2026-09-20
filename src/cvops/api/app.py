@@ -375,8 +375,13 @@ def get_pdf(slug: str) -> Response:
     return Response(pdf_path.read_bytes(), media_type="application/pdf")
 
 
+class DeleteResult(BaseModel):
+    moved: list[str]
+    overview: Overview  # the dashboard as it is now, so the UI needs no second request
+
+
 @app.delete("/targets/{slug}")
-def delete_target(slug: str) -> dict[str, list[str]]:
+def delete_target(slug: str) -> DeleteResult:
     """Move a target and its build output to data/.trash/<stamp>/ -- recoverable, not unlinked.
 
     Master and the import it came from are untouched, so the version can be rebuilt.
@@ -391,7 +396,7 @@ def delete_target(slug: str) -> dict[str, list[str]]:
         if p.is_file():
             shutil.move(p, trash / p.name)
             moved.append(p.name)
-    return {"moved": moved}
+    return DeleteResult(moved=moved, overview=overview())
 
 
 class MatchLine(BaseModel):

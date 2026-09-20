@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import {
   ApiError,
@@ -15,6 +16,9 @@ import {
   pdfUrl,
   tailorTarget,
 } from "@/lib/api";
+
+import { btn, cta, field, glass, mesh } from "@/lib/glass";
+import { rise } from "@/lib/fx/presets";
 
 type Tab = "overview" | "build" | "match" | "tailor";
 
@@ -52,18 +56,13 @@ function Spinner() {
   );
 }
 
-const inputClass =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground " +
-  "placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const inputClass = `${field} [&>option]:text-slate-900`;
 
-const buttonClass =
-  "inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground " +
-  "cursor-pointer transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50 " +
-  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+const buttonClass = `${cta} inline-flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50`;
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <p role="alert" className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+    <p role="alert" className="flex items-center gap-2 rounded-md border border-red-300/40 bg-red-400/10 px-3 py-2 text-sm text-red-200">
       <ErrorIcon />
       {message}
     </p>
@@ -86,16 +85,22 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex min-h-full flex-col">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-6 py-4">
+    <div className={mesh}>
+      <div className="mx-auto max-w-[1200px] space-y-4">
+      <motion.header
+        variants={rise}
+        initial="hidden"
+        animate="show"
+        className={`${glass} flex flex-wrap items-center justify-between gap-3 px-5 py-4`}
+      >
         <div>
           <h1 className="font-mono text-lg font-semibold tracking-tight">CVOps</h1>
-          <Link href="/" className="text-xs text-muted-foreground underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">
+          <Link href="/" className={`${btn} mt-1 inline-block text-xs`}>
             &larr; Dashboard
           </Link>
         </div>
         <div className="flex items-center gap-2">
-          <label htmlFor="target-select" className="text-xs text-muted-foreground">
+          <label htmlFor="target-select" className="text-xs text-slate-300">
             Target
           </label>
           <select
@@ -114,46 +119,61 @@ export default function Home() {
             ))}
           </select>
         </div>
-      </header>
+      </motion.header>
 
       {targetsError && (
-        <div className="px-6 pt-4">
+        <div>
           <ErrorBanner message={`Can't reach the CVOps API at localhost:8000 -- is it running? (${targetsError})`} />
         </div>
       )}
 
-      <nav className="flex gap-1 border-b border-border px-6" aria-label="Sections">
+      <nav className={`${glass} flex gap-1 px-3`} aria-label="Sections">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
             aria-current={tab === t.id ? "page" : undefined}
-            className={`cursor-pointer border-b-2 px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-              tab === t.id
-                ? "border-accent text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+            className={`relative cursor-pointer px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+              tab === t.id ? "text-white" : "text-slate-300 hover:text-white"
             }`}
           >
             {t.label}
+            {/* one underline that slides between tabs */}
+            {tab === t.id && (
+              <motion.span
+                layoutId="tab-underline"
+                className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-orange-400"
+                transition={{ type: "spring", stiffness: 400, damping: 36 }}
+              />
+            )}
           </button>
         ))}
       </nav>
 
-      <main className="flex-1 px-6 py-6">
+      <main>
         {!slug ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-slate-300">
             {targets ? "No targets yet -- propose one from the Tailor tab." : "Loading targets..."}
           </p>
         ) : (
-          <>
-            {tab === "overview" && <OverviewPanel key={slug} slug={slug} />}
-            {tab === "build" && <BuildPanel key={slug} slug={slug} />}
-            {tab === "match" && <MatchPanel slug={slug} />}
-            {tab === "tailor" && <TailorPanel onProposed={() => listTargets().then(setTargets)} />}
-          </>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18 }}
+            >
+              {tab === "overview" && <OverviewPanel key={slug} slug={slug} />}
+              {tab === "build" && <BuildPanel key={slug} slug={slug} />}
+              {tab === "match" && <MatchPanel slug={slug} />}
+              {tab === "tailor" && <TailorPanel onProposed={() => listTargets().then(setTargets)} />}
+            </motion.div>
+          </AnimatePresence>
         )}
       </main>
+      </div>
     </div>
   );
 }
@@ -173,64 +193,64 @@ function OverviewPanel({ slug }: { slug: string }) {
   }, [slug]);
 
   if (error) return <ErrorBanner message={error} />;
-  if (!resume) return <p className="text-sm text-muted-foreground">Loading...</p>;
+  if (!resume) return <p className="text-sm text-slate-300">Loading...</p>;
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <section className="rounded-lg border border-border bg-card p-4">
-        <h2 className="font-mono text-sm font-semibold text-muted-foreground">Basics</h2>
+      <section className={`${glass} p-4`}>
+        <h2 className="font-mono text-sm font-semibold text-slate-300">Basics</h2>
         <p className="mt-2 text-base font-medium">{resume.basics.name}</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-slate-300">
           {resume.basics.email} &middot; {resume.basics.phone}
           {resume.basics.location ? ` · ${resume.basics.location}` : ""}
         </p>
         <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
           <div>
-            <dt className="text-muted-foreground">Sections</dt>
+            <dt className="text-slate-300">Sections</dt>
             <dd className="font-mono">{resume.sections.join(", ")}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Max pages</dt>
+            <dt className="text-slate-300">Max pages</dt>
             <dd className="font-mono">{resume.max_pages}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Skills</dt>
+            <dt className="text-slate-300">Skills</dt>
             <dd className="font-mono">{resume.skills.length}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Experience entries</dt>
+            <dt className="text-slate-300">Experience entries</dt>
             <dd className="font-mono">{resume.experience.length}</dd>
           </div>
         </dl>
       </section>
 
       {resume.summary && (
-        <section className="rounded-lg border border-border bg-card p-4">
-          <h2 className="font-mono text-sm font-semibold text-muted-foreground">Summary</h2>
+        <section className={`${glass} p-4`}>
+          <h2 className="font-mono text-sm font-semibold text-slate-300">Summary</h2>
           <p className="mt-2 text-sm">{resume.summary.text}</p>
         </section>
       )}
 
-      <section className="rounded-lg border border-border bg-card p-4 lg:col-span-2">
-        <h2 className="font-mono text-sm font-semibold text-muted-foreground">Skills</h2>
+      <section className={`${glass} p-4 lg:col-span-2`}>
+        <h2 className="font-mono text-sm font-semibold text-slate-300">Skills</h2>
         <ul className="mt-2 flex flex-wrap gap-1.5">
           {resume.skills.map((s) => (
-            <li key={s.id} className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+            <li key={s.id} className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-slate-300">
               {s.name}
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="rounded-lg border border-border bg-card p-4 lg:col-span-2">
-        <h2 className="font-mono text-sm font-semibold text-muted-foreground">Experience</h2>
+      <section className={`${glass} p-4 lg:col-span-2`}>
+        <h2 className="font-mono text-sm font-semibold text-slate-300">Experience</h2>
         <ul className="mt-2 space-y-3">
           {resume.experience.map((exp) => (
-            <li key={exp.id} className="border-b border-border pb-3 last:border-0 last:pb-0">
+            <li key={exp.id} className="border-b border-white/20 pb-3 last:border-0 last:pb-0">
               <p className="text-sm font-medium">
-                {exp.title} <span className="text-muted-foreground">&middot; {exp.company}</span>
+                {exp.title} <span className="text-slate-300">&middot; {exp.company}</span>
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-300">
                 {exp.dates}
                 {exp.location ? ` · ${exp.location}` : ""} &middot; {exp.bullets.length} bullet
                 {exp.bullets.length === 1 ? "" : "s"}
@@ -280,16 +300,16 @@ function BuildPanel({ slug }: { slug: string }) {
 
         {result && (
           <>
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-4">
+            <div className={`flex flex-wrap items-center gap-3 ${glass} p-4`}>
               <span
                 className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  result.lint_ok ? "bg-accent/15 text-accent" : "bg-destructive/15 text-destructive"
+                  result.lint_ok ? "bg-emerald-400/15 text-emerald-200" : "bg-red-400/15 text-red-200"
                 }`}
               >
                 {result.lint_ok ? <CheckIcon /> : <ErrorIcon />}
                 {result.lint_ok ? "Lint OK" : "Lint failed"}
               </span>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-slate-300">
                 {(result.pdf_bytes / 1024).toFixed(0)} KB &middot; {result.errors.length} error
                 {result.errors.length === 1 ? "" : "s"} &middot; {result.warnings.length} warning
                 {result.warnings.length === 1 ? "" : "s"}
@@ -298,7 +318,7 @@ function BuildPanel({ slug }: { slug: string }) {
                 href={pdfUrl(slug)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="ml-auto text-sm text-accent underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                className="ml-auto text-sm text-sky-200 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
               >
                 Open PDF in new tab
               </a>
@@ -307,7 +327,7 @@ function BuildPanel({ slug }: { slug: string }) {
             {result.errors.length > 0 && (
               <ul className="space-y-1">
                 {result.errors.map((e, i) => (
-                  <li key={i} className="flex gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-sm text-destructive">
+                  <li key={i} className="flex gap-2 rounded-md border border-red-300/40 bg-red-400/10 px-3 py-1.5 text-sm text-red-200">
                     <ErrorIcon />
                     {e}
                   </li>
@@ -317,7 +337,7 @@ function BuildPanel({ slug }: { slug: string }) {
             {result.warnings.length > 0 && (
               <ul className="space-y-1">
                 {result.warnings.map((w, i) => (
-                  <li key={i} className="rounded-md border border-border bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
+                  <li key={i} className="rounded-md border border-white/20 bg-white/5 px-3 py-1.5 text-sm text-slate-300">
                     {w}
                   </li>
                 ))}
@@ -328,7 +348,7 @@ function BuildPanel({ slug }: { slug: string }) {
               key={buildCount}
               title={`${slug} resume PDF preview`}
               src={`${pdfUrl(slug)}#toolbar=0`}
-              className="h-[70vh] w-full rounded-lg border border-border bg-white"
+              className="h-[70vh] w-full rounded-lg border border-white/20 bg-white"
             />
           </>
         )}
@@ -347,10 +367,10 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_CLASS: Record<string, string> = {
-  missing: "bg-destructive/15 text-destructive",
-  missing_from_target: "bg-destructive/10 text-destructive/80",
-  present_as_alias: "bg-muted text-muted-foreground",
-  present: "bg-accent/15 text-accent",
+  missing: "bg-red-400/15 text-red-200",
+  missing_from_target: "bg-red-400/10 text-red-200/80",
+  present_as_alias: "bg-white/10 text-slate-300",
+  present: "bg-emerald-400/15 text-emerald-200",
 };
 
 function MatchPanel({ slug }: { slug: string }) {
@@ -400,13 +420,13 @@ function MatchPanel({ slug }: { slug: string }) {
             </p>
             <ul className="space-y-1">
               {result.lines.map((l, i) => (
-                <li key={i} className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-sm">
+                <li key={i} className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-sm backdrop-blur-md">
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[l.status]}`}>
                     {STATUS_LABEL[l.status]}
                   </span>
                   <span className="font-mono">{l.term}</span>
-                  <span className="text-xs text-muted-foreground">({l.section})</span>
-                  {l.note && <span className="ml-auto truncate text-xs text-muted-foreground">{l.note}</span>}
+                  <span className="text-xs text-slate-300">({l.section})</span>
+                  {l.note && <span className="ml-auto truncate text-xs text-slate-300">{l.note}</span>}
                 </li>
               ))}
             </ul>
@@ -489,7 +509,7 @@ function TailorPanel({ onProposed }: { onProposed: () => void }) {
             type="checkbox"
             checked={force}
             onChange={(e) => setForce(e.target.checked)}
-            className="h-4 w-4 cursor-pointer rounded border-border focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-4 w-4 cursor-pointer rounded accent-orange-500 focus-visible:ring-2 focus-visible:ring-white"
           />
           Overwrite if it already exists
         </label>
@@ -508,7 +528,7 @@ function TailorPanel({ onProposed }: { onProposed: () => void }) {
       <div aria-live="polite">
         {error && <ErrorBanner message={error} />}
         {result && (
-          <p className="flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
+          <p className="flex items-center gap-2 rounded-md border border-emerald-300/40 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-200">
             <CheckIcon />
             Wrote <span className="font-mono">{result.wrote}</span> -- review the diff, then build & lint it.
           </p>

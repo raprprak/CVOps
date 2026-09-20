@@ -42,3 +42,10 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Section links in the editors glide instead of jumping (not under reduced motion). */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}

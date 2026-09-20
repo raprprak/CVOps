@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { btn, glass, mesh } from "@/lib/glass";
+import { collapse, ease, rise, stagger } from "@/lib/fx/presets";
 import { Field, Module, Sec, patch } from "@/lib/ui";
 
 // Prototype: state lives in the browser only. Nothing here is saved or sent to the API.
@@ -42,19 +44,19 @@ export default function Builder() {
 
   return (
     <div className={mesh}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <motion.div variants={rise} initial="hidden" animate="show" className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-white">ATS Resume Builder</h1>
         <Link href="/" className={btn}>Dashboard</Link>
-      </div>
+      </motion.div>
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         {/* LEFT: glass controls */}
-        <div className="min-w-0 space-y-4">
-          <nav aria-label="Form sections" className={`${glass} flex flex-wrap gap-2 p-3`}>
+        <motion.div variants={stagger} initial="hidden" animate="show" className="min-w-0 space-y-4">
+          <motion.nav variants={rise} aria-label="Form sections" className={`${glass} flex flex-wrap gap-2 p-3`}>
             {SECTIONS.map((s) => (
               <a key={s} href={`#${s}`} className={`${btn} capitalize`}>{s}</a>
             ))}
-          </nav>
+          </motion.nav>
 
           <Module id="basics" title="Basics">
             <div className="grid gap-3 sm:grid-cols-2">
@@ -77,8 +79,9 @@ export default function Builder() {
           </Module>
 
           <Module id="experience" title="Experience">
+            <AnimatePresence initial={false}>
             {jobs.map((j, i) => (
-              <fieldset key={j.id} className="space-y-3 rounded-xl border border-white/20 p-3">
+              <motion.fieldset key={j.id} {...collapse} className="space-y-3 rounded-xl border border-white/20 p-3">
                 <legend className="px-1 text-sm font-medium text-slate-100">Role {i + 1}</legend>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Job title" value={j.title} onChange={(v) => setJobs(patch(jobs, j.id, { title: v }))} />
@@ -89,8 +92,9 @@ export default function Builder() {
                 <button type="button" className={btn} onClick={() => setJobs(jobs.filter((x) => x.id !== j.id))}>
                   Remove role {i + 1}
                 </button>
-              </fieldset>
+              </motion.fieldset>
             ))}
+            </AnimatePresence>
             <button
               type="button"
               className={btn}
@@ -101,8 +105,9 @@ export default function Builder() {
           </Module>
 
           <Module id="education" title="Education">
+            <AnimatePresence initial={false}>
             {edus.map((e, i) => (
-              <fieldset key={e.id} className="space-y-3 rounded-xl border border-white/20 p-3">
+              <motion.fieldset key={e.id} {...collapse} className="space-y-3 rounded-xl border border-white/20 p-3">
                 <legend className="px-1 text-sm font-medium text-slate-100">Education {i + 1}</legend>
                 <Field label="School" value={e.school} onChange={(v) => setEdus(patch(edus, e.id, { school: v }))} />
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -112,8 +117,9 @@ export default function Builder() {
                 <button type="button" className={btn} onClick={() => setEdus(edus.filter((x) => x.id !== e.id))}>
                   Remove education {i + 1}
                 </button>
-              </fieldset>
+              </motion.fieldset>
             ))}
+            </AnimatePresence>
             <button
               type="button"
               className={btn}
@@ -122,11 +128,17 @@ export default function Builder() {
               Add education
             </button>
           </Module>
-        </div>
+        </motion.div>
 
         {/* RIGHT: ATS layer -- solid white, single column, no glass/transparency/charts.
             min-w-0 + overflow-wrap:anywhere = "Long Token Wrapping"; no overflow-hidden anywhere. */}
-        <section aria-label="Live preview" className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto">
+        <motion.section
+          aria-label="Live preview"
+          initial={{ opacity: 0, x: 28 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.55, ease: ease.out, delay: 0.15 }}
+          className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto"
+        >
           <article className="min-w-0 rounded-sm bg-white p-5 text-slate-900 shadow-xl [overflow-wrap:anywhere] sm:p-8">
             <header>
               <h2 className="text-2xl font-bold">{b.name}</h2>
@@ -178,7 +190,7 @@ export default function Builder() {
               </Sec>
             )}
           </article>
-        </section>
+        </motion.section>
       </div>
     </div>
   );

@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
 import { ReactNode, useEffect, useState } from "react";
 import {
   ApiError, ApplyResult, BuildResult, DraftMaster, DraftText, ImportDraft,
   applyImport, buildTarget, getImport, pdfUrl, saveImport,
 } from "@/lib/api";
 import { btn, cta, glass, mesh } from "@/lib/glass";
+import { collapse, ease, rise, stagger } from "@/lib/fx/presets";
 import { Field, Module, Sec, patch } from "@/lib/ui";
 
 const SECTIONS = ["basics", "summary", "skills", "experience", "projects", "education", "certifications"] as const;
@@ -39,8 +41,9 @@ function Bullets({
 }: { label: string; items: DraftText[]; onChange: (v: DraftText[]) => void; parent: string }) {
   return (
     <div className="space-y-2">
+      <AnimatePresence initial={false}>
       {items.map((b, i) => (
-        <div key={b.id} className="flex gap-2">
+        <motion.div key={b.id} {...collapse} className="flex gap-2">
           <div className="min-w-0 flex-1">
             <Field label={`${label} ${i + 1}`} rows={2} value={b.text} onChange={(v) => onChange(patch(items, b.id, { text: v }))} />
           </div>
@@ -52,8 +55,9 @@ function Bullets({
           >
             Remove
           </button>
-        </div>
+        </motion.div>
       ))}
+      </AnimatePresence>
       <button type="button" className={btn} onClick={() => onChange([...items, { id: `${parent}-${rid()}`, text: "", tags: [] }])}>
         Add {label.toLowerCase()}
       </button>
@@ -63,11 +67,11 @@ function Bullets({
 
 function Entry({ title, onRemove, children }: { title: string; onRemove: () => void; children: ReactNode }) {
   return (
-    <fieldset className="space-y-3 rounded-xl border border-white/20 p-3">
+    <motion.fieldset {...collapse} className="space-y-3 rounded-xl border border-white/20 p-3">
       <legend className="px-1 text-sm font-medium text-slate-100">{title}</legend>
       {children}
       <button type="button" className={btn} onClick={onRemove}>Remove {title.toLowerCase()}</button>
-    </fieldset>
+    </motion.fieldset>
   );
 }
 
@@ -251,7 +255,7 @@ export default function ReviewImport() {
   return (
     <div className={mesh}>
       <div className="mx-auto max-w-[1400px]">
-        <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <motion.header variants={rise} initial="hidden" animate="show" className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-xl font-semibold text-white">Review &amp; edit</h1>
             {draft && <p className="font-mono text-sm text-slate-200 [overflow-wrap:anywhere]">{draft.filename}</p>}
@@ -260,17 +264,25 @@ export default function ReviewImport() {
             <Link href="/upload" className={btn}>Uploads</Link>
             <Link href="/" className={btn}>Dashboard</Link>
           </nav>
-        </header>
+        </motion.header>
 
         {error && (
-          <p role="alert" className={`${glass} mb-4 whitespace-pre-line border-red-300/40 px-4 py-3 text-sm text-red-200 [overflow-wrap:anywhere]`}>{error}</p>
+          <motion.p
+            role="alert"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: ease.out }}
+            className={`${glass} mb-4 whitespace-pre-line border-red-300/40 px-4 py-3 text-sm text-red-200 [overflow-wrap:anywhere]`}
+          >
+            {error}
+          </motion.p>
         )}
         {!m && !error && <p aria-busy="true" className="text-sm text-slate-200">Loading...</p>}
 
         {draft && m && (
           <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-            <div className="min-w-0 space-y-4">
-              <div className={`${glass} space-y-3 p-4`}>
+            <motion.div variants={stagger} initial="hidden" animate="show" className="min-w-0 space-y-4">
+              <motion.div variants={rise} className={`${glass} space-y-3 p-4`}>
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="button"
@@ -282,7 +294,18 @@ export default function ReviewImport() {
                     Save draft
                   </button>
                   <span aria-live="polite" className="text-sm text-slate-100">
-                    {saving ? "Saving..." : dirty ? "Unsaved changes" : "Saved"}
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.span
+                        key={saving ? "saving" : dirty ? "dirty" : "saved"}
+                        className="inline-block"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        {saving ? "Saving..." : dirty ? "Unsaved changes" : "Saved"}
+                      </motion.span>
+                    </AnimatePresence>
                   </span>
                 </div>
                 {problems.length > 0 && (
@@ -332,13 +355,18 @@ export default function ReviewImport() {
                   </button>
                   <div aria-live="polite" className="space-y-2 text-sm text-slate-100">
                     {applied && (
-                      <p>
+                      <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: ease.out }}>
                         Added to master: {counts(applied.added)}. Already there: {counts(applied.already_present)}.
                         Created resume <span className="font-mono">{applied.slug}</span>.
-                      </p>
+                      </motion.p>
                     )}
                     {build && (
-                      <>
+                      <motion.div
+                        className="space-y-2"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, ease: ease.out, delay: 0.1 }}
+                      >
                         <p className={build.lint_ok ? "text-emerald-200" : "text-red-200"}>
                           {build.lint_ok ? "Lint OK" : "Lint failed"} &middot; {(build.pdf_bytes / 1024).toFixed(0)} KB
                           &middot; {build.errors.length} error{build.errors.length === 1 ? "" : "s"} &middot; {build.warnings.length} warning{build.warnings.length === 1 ? "" : "s"}
@@ -349,18 +377,18 @@ export default function ReviewImport() {
                           </ul>
                         )}
                         <a href={pdfUrl(build.slug)} target="_blank" rel="noopener noreferrer" className={`${btn} inline-block`}>Open PDF</a>
-                      </>
+                      </motion.div>
                     )}
                     {buildError && <p className="text-red-200 [overflow-wrap:anywhere]">The resume was created but the build failed: {buildError}</p>}
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
-              <nav aria-label="Form sections" className={`${glass} flex flex-wrap gap-2 p-3`}>
+              <motion.nav variants={rise} aria-label="Form sections" className={`${glass} flex flex-wrap gap-2 p-3`}>
                 {SECTIONS.map((s) => (
                   <a key={s} href={`#${s}`} className={`${btn} capitalize`}>{s}</a>
                 ))}
-              </nav>
+              </motion.nav>
 
               <Module id="basics" title="Basics">
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -397,8 +425,9 @@ export default function ReviewImport() {
               </Module>
 
               <Module id="skills" title="Skills">
+                <AnimatePresence initial={false}>
                 {m.skills.map((s, i) => (
-                  <div key={s.id} className="flex gap-2">
+                  <motion.div key={s.id} {...collapse} className="flex gap-2">
                     <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
                       <Field label={`Skill ${i + 1}`} value={s.name} onChange={(v) => set("skills", patch(m.skills, s.id, { name: v }))} />
                       <Field label={`Category ${i + 1}`} value={s.category ?? ""} onChange={(v) => set("skills", patch(m.skills, s.id, { category: v || null }))} />
@@ -406,14 +435,16 @@ export default function ReviewImport() {
                     <button type="button" className={`${btn} self-end`} aria-label={`Remove skill ${i + 1}`} onClick={() => set("skills", m.skills.filter((x) => x.id !== s.id))}>
                       Remove
                     </button>
-                  </div>
+                  </motion.div>
                 ))}
+                </AnimatePresence>
                 <button type="button" className={btn} onClick={() => set("skills", [...m.skills, { id: `sk-${rid()}`, name: "", category: null, tags: [], aliases: [] }])}>
                   Add skill
                 </button>
               </Module>
 
               <Module id="experience" title="Experience">
+                <AnimatePresence initial={false}>
                 {m.experience.map((e, i) => (
                   <Entry key={e.id} title={`Role ${i + 1}`} onRemove={() => set("experience", m.experience.filter((x) => x.id !== e.id))}>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -428,12 +459,14 @@ export default function ReviewImport() {
                     <Bullets label="Bullet" parent={e.id} items={e.bullets} onChange={(v) => set("experience", patch(m.experience, e.id, { bullets: v }))} />
                   </Entry>
                 ))}
+                </AnimatePresence>
                 <button type="button" className={btn} onClick={() => set("experience", [...m.experience, { id: `exp-${rid()}`, company: "", title: "", location: null, start: "", end: null, bullets: [] }])}>
                   Add role
                 </button>
               </Module>
 
               <Module id="projects" title="Projects">
+                <AnimatePresence initial={false}>
                 {m.projects.map((p, i) => (
                   <Entry key={p.id} title={`Project ${i + 1}`} onRemove={() => set("projects", m.projects.filter((x) => x.id !== p.id))}>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -443,12 +476,14 @@ export default function ReviewImport() {
                     <Bullets label="Bullet" parent={p.id} items={p.bullets} onChange={(v) => set("projects", patch(m.projects, p.id, { bullets: v }))} />
                   </Entry>
                 ))}
+                </AnimatePresence>
                 <button type="button" className={btn} onClick={() => set("projects", [...m.projects, { id: `proj-${rid()}`, name: "", url: null, start: null, end: null, bullets: [] }])}>
                   Add project
                 </button>
               </Module>
 
               <Module id="education" title="Education">
+                <AnimatePresence initial={false}>
                 {m.education.map((e, i) => (
                   <Entry key={e.id} title={`Education ${i + 1}`} onRemove={() => set("education", m.education.filter((x) => x.id !== e.id))}>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -462,12 +497,14 @@ export default function ReviewImport() {
                     <Bullets label="Detail" parent={e.id} items={e.details} onChange={(v) => set("education", patch(m.education, e.id, { details: v }))} />
                   </Entry>
                 ))}
+                </AnimatePresence>
                 <button type="button" className={btn} onClick={() => set("education", [...m.education, { id: `edu-${rid()}`, institution: "", degree: "", field: null, location: null, start: null, end: null, details: [] }])}>
                   Add education
                 </button>
               </Module>
 
               <Module id="certifications" title="Certifications">
+                <AnimatePresence initial={false}>
                 {m.certifications.map((c, i) => (
                   <Entry key={c.id} title={`Certification ${i + 1}`} onRemove={() => set("certifications", m.certifications.filter((x) => x.id !== c.id))}>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -478,15 +515,22 @@ export default function ReviewImport() {
                     </div>
                   </Entry>
                 ))}
+                </AnimatePresence>
                 <button type="button" className={btn} onClick={() => set("certifications", [...m.certifications, { id: `cert-${rid()}`, name: "", issuer: null, date: null, url: null }])}>
                   Add certification
                 </button>
               </Module>
-            </div>
+            </motion.div>
 
-            <section aria-label="Live preview" className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto">
+            <motion.section
+              aria-label="Live preview"
+              initial={{ opacity: 0, x: 28 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.55, ease: ease.out, delay: 0.15 }}
+              className="min-w-0 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto"
+            >
               <Sheet m={m} />
-            </section>
+            </motion.section>
           </div>
         )}
       </div>
