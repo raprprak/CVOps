@@ -43,11 +43,11 @@ data/
   jds/<slug>.md           # the job description text, referenced from a target's `jd:` field
 ```
 
-`data/master.yaml` and `data/targets/example.yaml` ship with placeholder example data so the
-commands below work out of the box. **Replace `data/master.yaml` with your own real career
-data before using this for an actual application** — nothing in this tool invents or embellishes
-content; it only ever selects, orders, and (if you explicitly write an `override`) rewords what
-you put in `master.yaml`.
+`data/master.yaml` holds your real career data. `data/targets/generic.yaml` is a JD-agnostic
+default -- a solid all-purpose cut of master.yaml for when you're not tailoring to one specific
+job (`cvops build generic`). Nothing in this tool invents or embellishes content; it only ever
+selects, orders, and (if you explicitly write an `override`) rewords what you put in
+`master.yaml`.
 
 A target's text can differ from master only through `overrides:` — and every override shows up
 as a warning in `cvops lint` (rule L9), so drift from your source of truth is never silent.

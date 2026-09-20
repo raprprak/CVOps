@@ -22,8 +22,9 @@ uv run cvops tailor <jd> <new-slug>   # propose a target from master.yaml + a JD
 uv run pytest                # unit tests (reportlab-synthesized PDFs for the linter; no Typst needed)
 ```
 
-Edit `data/master.yaml` with your real career data, then `data/targets/example.yaml` (or add
-new targets) to build a resume for a specific job. `cvops lint` exits non-zero on any
+`data/master.yaml` now holds real career data. `data/targets/generic.yaml` is a JD-agnostic
+default target; `cvops tailor <jd> <new-slug>` proposes a target for a specific job.
+`cvops lint` exits non-zero on any
 error-level finding — that's what CI (`.github/workflows/ci.yml`) runs on every push.
 
 Full setup, command reference, day-to-day workflow, CI, and troubleshooting:

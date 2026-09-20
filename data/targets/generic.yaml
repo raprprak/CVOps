@@ -1,0 +1,53 @@
+# A generic, JD-agnostic ATS-safe resume: a strong default cut of master.yaml for when
+# you're not tailoring to one specific job (e.g. a resume to keep on file, or to upload to
+# a portal that just wants "a resume", not a targeted one). `cvops tailor <jd> <slug>` is
+# still the right tool once you *do* have a specific job description.
+
+jd: null
+max_pages: 2
+paper: a4
+skills_heading: Technical Skills
+
+sections: [summary, skills, experience, education, certifications]
+
+summary: sum-main
+
+# A broad, recognizable core skill set spanning the whole career -- not every skill in
+# master.yaml (see data/master.yaml for the full list), just what's relevant to most
+# backend/platform-engineering roles.
+skills:
+  - sk-python
+  - sk-fastapi
+  - sk-sqlalchemy
+  - sk-mongodb
+  - sk-elasticsearch
+  - sk-redis
+  - sk-celery
+  - sk-mcp
+  - sk-aws
+  - sk-gcp
+  - sk-java
+  - sk-javascript
+  - sk-react
+  - sk-nodejs
+  - sk-git
+  - sk-github
+  - sk-junit
+
+experience:
+  - ref: exp-persistent-cisco
+    bullets: [exp-persistent-cisco-03, exp-persistent-cisco-01, exp-persistent-cisco-02, exp-persistent-cisco-04]
+  - ref: exp-persistent-lead
+    bullets: [exp-persistent-lead-01, exp-persistent-lead-05, exp-persistent-lead-03, exp-persistent-lead-07]
+  - ref: exp-springml
+    bullets: [exp-springml-02, exp-springml-04, exp-springml-01]
+  - ref: exp-oracle
+    bullets: [exp-oracle-02, exp-oracle-03, exp-oracle-04, exp-oracle-10]
+  - ref: exp-seyfert
+    bullets: [exp-seyfert-04, exp-seyfert-01]
+
+education:
+  - ref: edu-btech
+
+certifications:
+  - cert-terraform-associate
