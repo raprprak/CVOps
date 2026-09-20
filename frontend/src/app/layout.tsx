@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
+// Plus Jakarta Sans per design-system MASTER.md.
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
@@ -22,7 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${plexSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">{children}</body>
     </html>

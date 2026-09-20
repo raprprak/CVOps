@@ -7,9 +7,11 @@ const API_BASE = "http://localhost:8000";
 export class ApiError extends Error {}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  // A FormData body needs the browser to set its own multipart Content-Type (with boundary).
+  const isForm = init?.body instanceof FormData;
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: isForm ? init?.headers : { "Content-Type": "application/json", ...init?.headers },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
@@ -115,7 +117,116 @@ export interface TailorResult {
   wrote: string;
 }
 
+export interface MasterStats {
+  name: string;
+  roles: number;
+  projects: number;
+  bullets: number;
+  skills: number;
+  education: number;
+  certifications: number;
+}
+
+export interface TargetInfo {
+  slug: string;
+  valid: boolean;
+  problem: string | null;
+  max_pages: number;
+  bullets: number;
+  skills: number;
+  version: string | null;
+  updated: string | null;
+  built_at: string | null;
+  pdf_bytes: number | null;
+}
+
+export interface Overview {
+  master: MasterStats;
+  targets: TargetInfo[];
+}
+
+export interface ImportSummary {
+  id: string;
+  filename: string;
+  imported_at: string;
+  applied_at: string | null;
+  name: string;
+  roles: number;
+  bullets: number;
+  skills: number;
+  projects: number;
+  education: number;
+  certifications: number;
+  warnings: string[];
+  problems: string[];
+}
+
+// A parsed draft in Master's shape, but lax: required fields may be empty until fixed.
+export interface DraftText {
+  id: string;
+  text: string;
+  tags: string[];
+}
+
+export interface DraftMaster {
+  basics: { name: string; email: string; phone: string; location: string | null; links: Link[] };
+  summaries: DraftText[];
+  skills: { id: string; name: string; category: string | null; tags: string[]; aliases: string[] }[];
+  experience: {
+    id: string; company: string; title: string; location: string | null;
+    start: string; end: string | null; bullets: DraftText[];
+  }[];
+  projects: {
+    id: string; name: string; url: string | null;
+    start: string | null; end: string | null; bullets: DraftText[];
+  }[];
+  education: {
+    id: string; institution: string; degree: string; field: string | null; location: string | null;
+    start: string | null; end: string | null; details: DraftText[];
+  }[];
+  certifications: {
+    id: string; name: string; issuer: string | null; date: string | null; url: string | null;
+  }[];
+}
+
+export interface ImportDraft {
+  id: string;
+  filename: string;
+  imported_at: string;
+  applied_at: string | null;
+  warnings: string[];
+  problems: string[];
+  master: DraftMaster;
+}
+
+export interface ApplyResult {
+  slug: string;
+  added: Record<string, number>;
+  already_present: Record<string, number>;
+}
+
 // -- calls -----------------------------------------------------------------------
+
+export const getOverview = () => request<Overview>("/overview");
+
+export const getImport = (id: string) => request<ImportDraft>(`/imports/${id}`);
+
+export const saveImport = (id: string, master: DraftMaster) =>
+  request<ImportDraft>(`/imports/${id}`, { method: "PUT", body: JSON.stringify({ master }) });
+
+export const applyImport = (id: string, slug: string, maxPages: number) =>
+  request<ApplyResult>(`/imports/${id}/apply`, {
+    method: "POST",
+    body: JSON.stringify({ slug, max_pages: maxPages }),
+  });
+
+export const listImports = () => request<ImportSummary[]>("/imports");
+
+export const uploadResume = (file: File) => {
+  const body = new FormData();
+  body.append("file", file);
+  return request<ImportSummary>("/imports", { method: "POST", body });
+};
 
 export const listTargets = () => request<string[]>("/targets");
 
