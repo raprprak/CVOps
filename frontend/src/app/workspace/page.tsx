@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import {
   ApiError,
@@ -129,13 +130,19 @@ export default function Home() {
             type="button"
             onClick={() => setTab(t.id)}
             aria-current={tab === t.id ? "page" : undefined}
-            className={`cursor-pointer border-b-2 px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-              tab === t.id
-                ? "border-accent text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+            className={`relative cursor-pointer px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              tab === t.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {t.label}
+            {/* one underline that slides between tabs */}
+            {tab === t.id && (
+              <motion.span
+                layoutId="tab-underline"
+                className="absolute inset-x-0 -bottom-px h-0.5 bg-accent"
+                transition={{ type: "spring", stiffness: 400, damping: 36 }}
+              />
+            )}
           </button>
         ))}
       </nav>
@@ -146,12 +153,20 @@ export default function Home() {
             {targets ? "No targets yet -- propose one from the Tailor tab." : "Loading targets..."}
           </p>
         ) : (
-          <>
-            {tab === "overview" && <OverviewPanel key={slug} slug={slug} />}
-            {tab === "build" && <BuildPanel key={slug} slug={slug} />}
-            {tab === "match" && <MatchPanel slug={slug} />}
-            {tab === "tailor" && <TailorPanel onProposed={() => listTargets().then(setTargets)} />}
-          </>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18 }}
+            >
+              {tab === "overview" && <OverviewPanel key={slug} slug={slug} />}
+              {tab === "build" && <BuildPanel key={slug} slug={slug} />}
+              {tab === "match" && <MatchPanel slug={slug} />}
+              {tab === "tailor" && <TailorPanel onProposed={() => listTargets().then(setTargets)} />}
+            </motion.div>
+          </AnimatePresence>
         )}
       </main>
     </div>

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { AnimatePresence, MotionConfig, animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
+import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
 import { ApiError, Overview, TargetInfo, deleteTarget, getOverview, pdfUrl } from "@/lib/api";
 import { btn, cta, glass, mesh } from "@/lib/glass";
+import { ParticleMorph, pop, rise, stagger } from "@/lib/fx";
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
@@ -42,7 +43,7 @@ function Stat({ label, value }: { label: string; value: number }) {
     return () => c.stop();
   }, [mv, value, reduce]);
   return (
-    <div className={`${glass} p-4`}>
+    <motion.div variants={pop} whileHover={{ y: -3 }} className={`${glass} p-4`}>
       <dt className="text-sm text-slate-200">{label}</dt>
       <motion.dd
         animate={{ color: moving ? "#fdba74" : "#ffffff" }}
@@ -51,7 +52,7 @@ function Stat({ label, value }: { label: string; value: number }) {
       >
         {shown}
       </motion.dd>
-    </div>
+    </motion.div>
   );
 }
 
@@ -76,6 +77,8 @@ function ResumeCard({ t, onDeleted }: { t: TargetInfo; onDeleted: (slug: string,
     // layout: siblings slide into the gap; exit: this card fades and shrinks (AnimatePresence)
     <motion.li
       layout
+      variants={rise}
+      whileHover={{ y: -3 }}
       exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.25 } }}
       transition={{ layout: { type: "spring", stiffness: 300, damping: 34 } }}
       className={`${glass} flex min-w-0 flex-col gap-3 p-4`}
@@ -159,20 +162,28 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <MotionConfig reducedMotion="user">
     <div className={mesh}>
       <main className="mx-auto max-w-[1200px] space-y-8">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-white">CVOps</h1>
-            <p className="text-sm text-slate-200">Resume-as-code dashboard</p>
+        <motion.header
+          variants={rise}
+          initial="hidden"
+          animate="show"
+          className={`${glass} flex flex-wrap items-center justify-between gap-4 overflow-hidden px-6 py-6`}
+        >
+          <div className="min-w-0 space-y-4">
+            <div>
+              <h1 className="text-3xl font-semibold text-white">CVOps</h1>
+              <p className="text-sm text-slate-200">Resume-as-code dashboard</p>
+            </div>
+            <nav aria-label="Primary" className="flex flex-wrap gap-2">
+              <Link href="/upload" className={cta}>Upload resume</Link>
+              <Link href="/workspace" className={btn}>Workspace</Link>
+              <Link href="/builder" className={btn}>Resume builder</Link>
+            </nav>
           </div>
-          <nav aria-label="Primary" className="flex flex-wrap gap-2">
-            <Link href="/upload" className={cta}>Upload resume</Link>
-            <Link href="/workspace" className={btn}>Workspace</Link>
-            <Link href="/builder" className={btn}>Resume builder</Link>
-          </nav>
-        </header>
+          {/* decorative: a resume page dissolves into a globe and back */}
+          <ParticleMorph loop className="pointer-events-none h-40 w-full sm:h-48 sm:w-72" />
+        </motion.header>
 
         {error && (
           <p role="alert" className={`${glass} border-red-300/40 px-4 py-3 text-sm text-red-200`}>
@@ -182,13 +193,14 @@ export default function Dashboard() {
         {!data && !error && <p aria-busy="true" className="text-sm text-slate-200">Loading...</p>}
 
         {data && (
-          <>
+          // Mounted when the data lands, so it staggers in then: tiles pop, cards rise.
+          <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-8">
             <section aria-labelledby="master-h">
               <h2 id="master-h" className="text-lg font-semibold text-white">Your resumes</h2>
               <p className="mb-3 text-sm text-slate-200">
                 {data.master.name} · distinct items used across the resumes below
               </p>
-              <dl className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <motion.dl variants={stagger} className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <Stat label="Resumes" value={data.targets.length} />
                 <Stat label="Roles" value={data.master.roles} />
                 <Stat label="Bullets" value={data.master.bullets} />
@@ -196,12 +208,12 @@ export default function Dashboard() {
                 <Stat label="Projects" value={data.master.projects} />
                 <Stat label="Education" value={data.master.education} />
                 <Stat label="Certifications" value={data.master.certifications} />
-              </dl>
+              </motion.dl>
             </section>
 
             <section aria-labelledby="resumes-h">
               <h2 id="resumes-h" className="mb-3 text-lg font-semibold text-white">Resumes</h2>
-              <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <motion.ul variants={stagger} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <AnimatePresence>
                   {data.targets.map((t) => (
                     <ResumeCard
@@ -215,7 +227,7 @@ export default function Dashboard() {
                     />
                   ))}
                 </AnimatePresence>
-              </ul>
+              </motion.ul>
               {data.targets.length === 0 && (
                 <motion.p
                   initial={{ opacity: 0 }}
@@ -228,10 +240,9 @@ export default function Dashboard() {
                 </motion.p>
               )}
             </section>
-          </>
+          </motion.div>
         )}
       </main>
     </div>
-    </MotionConfig>
   );
 }

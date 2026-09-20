@@ -1,7 +1,9 @@
 "use client";
 
+import { motion } from "motion/react";
 import { ReactNode, useId } from "react";
-import { field, glass, motion } from "@/lib/glass";
+import { rise } from "@/lib/fx/presets";
+import { field, glass, motion as tx } from "@/lib/glass";
 
 // Immutable "replace the item with this id" for editable lists.
 export const patch = <T extends { id: string }>(list: T[], id: string, p: Partial<T>) =>
@@ -37,19 +39,20 @@ export function Sec({ title, children }: { title: string; children: ReactNode })
   );
 }
 
-// Native <details>: keyboard-operable and collapsible with no JS state.
+// Native <details>: keyboard-operable and collapsible with no JS state. Rises in with its parent's
+// stagger when there is one (variants); on its own it just shows.
 export function Module({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <details id={id} open className={`group scroll-mt-4 ${glass}`}>
+    <motion.details id={id} open variants={rise} className={`group scroll-mt-4 ${glass}`}>
       <summary
-        className={`flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-base font-semibold text-white ${motion} hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [&::-webkit-details-marker]:hidden`}
+        className={`flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-base font-semibold text-white ${tx} hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [&::-webkit-details-marker]:hidden`}
       >
         {title}
-        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className={`h-4 w-4 shrink-0 group-open:rotate-180 ${motion}`}>
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className={`h-4 w-4 shrink-0 group-open:rotate-180 ${tx}`}>
           <path d="M5 8l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </summary>
       <div className="space-y-3 border-t border-white/20 p-4">{children}</div>
-    </details>
+    </motion.details>
   );
 }
