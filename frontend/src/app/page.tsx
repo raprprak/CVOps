@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ApiError, Overview, TargetInfo, getOverview, pdfUrl } from "@/lib/api";
+import { ApiError, Overview, TargetInfo, deleteTarget, getOverview, pdfUrl } from "@/lib/api";
 import { btn, cta, glass, mesh } from "@/lib/glass";
 
 const fmt = (iso: string) =>
@@ -33,7 +33,23 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function ResumeCard({ t }: { t: TargetInfo }) {
+function ResumeCard({ t, onDeleted }: { t: TargetInfo; onDeleted: (slug: string) => void }) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const remove = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await deleteTarget(t.slug);
+      onDeleted(t.slug);
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "backend unreachable");
+      setBusy(false);
+    }
+  };
+
   return (
     <li className={`${glass} flex min-w-0 flex-col gap-3 p-4`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -83,6 +99,23 @@ function ResumeCard({ t }: { t: TargetInfo }) {
           </a>
         )}
       </div>
+
+      {err && <p role="alert" className="text-sm text-red-200 [overflow-wrap:anywhere]">{err}</p>}
+      {confirming ? (
+        <div role="alertdialog" aria-label={`Delete ${t.slug}`} className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-slate-100">Delete this version? Files move to data/.trash.</span>
+          <button type="button" onClick={remove} disabled={busy} className={`${btn} border-red-300/50 text-red-200`}>
+            {busy ? "Deleting..." : "Yes, delete"}
+          </button>
+          <button type="button" onClick={() => setConfirming(false)} disabled={busy} className={btn} autoFocus>
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setConfirming(true)} className={`${btn} self-start text-red-200`}>
+          Delete
+        </button>
+      )}
     </li>
   );
 }
@@ -144,7 +177,15 @@ export default function Dashboard() {
                 </p>
               ) : (
                 <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {data.targets.map((t) => <ResumeCard key={t.slug} t={t} />)}
+                  {data.targets.map((t) => (
+                    <ResumeCard
+                      key={t.slug}
+                      t={t}
+                      onDeleted={(slug) =>
+                        setData({ ...data, targets: data.targets.filter((x) => x.slug !== slug) })
+                      }
+                    />
+                  ))}
                 </ul>
               )}
             </section>

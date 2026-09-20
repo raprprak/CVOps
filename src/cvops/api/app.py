@@ -9,7 +9,9 @@ Run with: uv run uvicorn cvops.api.app:app --reload --port 8000
 
 from __future__ import annotations
 
+import re
 import secrets
+import shutil
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -369,6 +371,25 @@ def get_pdf(slug: str) -> Response:
     if not pdf_path.is_file():
         raise HTTPException(404, f"{slug}.pdf not built yet -- POST /targets/{slug}/build first")
     return Response(pdf_path.read_bytes(), media_type="application/pdf")
+
+
+@app.delete("/targets/{slug}")
+def delete_target(slug: str) -> dict[str, list[str]]:
+    """Move a target and its build output to data/.trash/<stamp>/ -- recoverable, not unlinked.
+
+    Master and the import it came from are untouched, so the version can be rebuilt.
+    """
+    src = target_path(DATA_DIR, slug)
+    if not re.fullmatch(ID_PATTERN, slug) or not src.is_file():
+        raise HTTPException(404, f"no target {slug!r}")
+    trash = DATA_DIR / ".trash" / datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
+    trash.mkdir(parents=True, exist_ok=True)
+    moved: list[str] = []
+    for p in (src, OUT_DIR / f"{slug}.pdf", OUT_DIR / f"{slug}.typ"):
+        if p.is_file():
+            shutil.move(p, trash / p.name)
+            moved.append(p.name)
+    return {"moved": moved}
 
 
 class MatchLine(BaseModel):
