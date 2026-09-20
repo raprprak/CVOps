@@ -97,30 +97,61 @@ _DEGREE = re.compile(
 
 _SECTIONS = {
     "summary": (
-        "summary", "professional summary", "profile", "professional profile", "objective",
-        "career objective", "about me", "about",
+        "summary",
+        "professional summary",
+        "profile",
+        "professional profile",
+        "objective",
+        "career objective",
+        "about me",
+        "about",
     ),
     "skills": (
-        "skills", "technical skills", "key skills", "core skills", "core competencies",
-        "technical proficiencies", "area of expertise", "areas of expertise", "expertise",
+        "skills",
+        "technical skills",
+        "key skills",
+        "core skills",
+        "core competencies",
+        "technical proficiencies",
+        "area of expertise",
+        "areas of expertise",
+        "expertise",
         "core expertise",
     ),
     "experience": (
-        "experience", "work experience", "professional experience", "employment history",
-        "work history", "employment", "relevant experience", "career history",
+        "experience",
+        "work experience",
+        "professional experience",
+        "employment history",
+        "work history",
+        "employment",
+        "relevant experience",
+        "career history",
     ),
     "education": ("education", "academic background", "education & training", "academics"),
     "projects": ("projects", "personal projects", "key projects", "selected projects"),
     "certifications": (
-        "certifications", "certificates", "licenses & certifications",
-        "certifications & licenses", "licenses",
+        "certifications",
+        "certificates",
+        "licenses & certifications",
+        "certifications & licenses",
+        "licenses",
     ),
 }
 _HEADING = {alias: name for name, aliases in _SECTIONS.items() for alias in aliases}
 # Real resume sections the Master schema has no place for.
 _IGNORED = {
-    "awards", "achievements", "interests", "hobbies", "languages", "references",
-    "publications", "volunteer experience", "volunteering", "declaration", "personal details",
+    "awards",
+    "achievements",
+    "interests",
+    "hobbies",
+    "languages",
+    "references",
+    "publications",
+    "volunteer experience",
+    "volunteering",
+    "declaration",
+    "personal details",
 }
 
 

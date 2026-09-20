@@ -8,6 +8,7 @@ ATSes don't auto-reject; the "75% rejected" figure has no study behind it. What 
 ## Layout rules (enforce in the Typst template)
 - Single-column only. No `grid`/`columns`/side-by-side blocks, no sidebars. Parsers read left-to-right; columns interleave text.
 - Contact details as literal text with literal labels ("Email:", "Phone:"), never icon-only.
+- Each contact item is an unbreakable box in the template: a long contact line wraps between items, never inside a URL or email (a split URL fails L1).
 - Standard section headings only: Summary, Experience, Education, Skills / Technical Skills, Projects, Certifications, Publications. Parsers dictionary-match headings.
 - No tables, no images, no text in headers/footers, no text boxes.
 - Skills section near the top — parsers and recruiters weight early content.
@@ -16,7 +17,7 @@ ATSes don't auto-reject; the "75% rejected" figure has no study behind it. What 
 ## Linter (`ats_lint.py`) — errors fail the build, warnings are reported
 - L1 round-trip: every leaf string of the resolved resume appears in the extracted text, using two independent extractors (`pdftotext`, `pypdf`). The automated notepad test.
 - L2 reading order: headings and bullets appear in source order.
-- L3 single column: all text lines start within one left-margin band (pdfplumber).
+- L3 single column: no second column of content recurs down the page (pdfplumber). Right-aligned dates are ignored: same-format dates have nearly the same width, start at the same x on every entry, and read in order on their line, so they would otherwise look like a column. Known limit: a column made only of dates would pass.
 - L4 standard headings only.
 - L5 contact as labelled text (regex over extracted text).
 - L6 fonts embedded, ToUnicode present.
