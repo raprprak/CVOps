@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AnimatePresence, MotionConfig, animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
 import { ApiError, Overview, TargetInfo, deleteTarget, getOverview, pdfUrl } from "@/lib/api";
 import { btn, cta, glass, mesh } from "@/lib/glass";
@@ -24,16 +25,37 @@ function AlertIcon() {
   );
 }
 
+// The number is a motion value: it is written straight to the DOM each frame (no React re-render),
+// so the count stays smooth. Colour glows orange while it moves.
 function Stat({ label, value }: { label: string; value: number }) {
+  const reduce = useReducedMotion();
+  const mv = useMotionValue(value);
+  const shown = useTransform(mv, Math.round);
+  const [moving, setMoving] = useState(false);
+  useEffect(() => {
+    const c = animate(mv, value, {
+      duration: reduce ? 0 : 0.9,
+      ease: "easeOut",
+      onPlay: () => setMoving(true),
+      onComplete: () => setMoving(false),
+    });
+    return () => c.stop();
+  }, [mv, value, reduce]);
   return (
     <div className={`${glass} p-4`}>
       <dt className="text-sm text-slate-200">{label}</dt>
-      <dd className="mt-1 text-3xl font-semibold tabular-nums text-white">{value}</dd>
+      <motion.dd
+        animate={{ color: moving ? "#fdba74" : "#ffffff" }}
+        transition={{ duration: 0.3 }}
+        className="mt-1 text-3xl font-semibold tabular-nums"
+      >
+        {shown}
+      </motion.dd>
     </div>
   );
 }
 
-function ResumeCard({ t, onDeleted }: { t: TargetInfo; onDeleted: (slug: string) => void }) {
+function ResumeCard({ t, onDeleted }: { t: TargetInfo; onDeleted: (slug: string, o: Overview) => void }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -42,8 +64,8 @@ function ResumeCard({ t, onDeleted }: { t: TargetInfo; onDeleted: (slug: string)
     setBusy(true);
     setErr(null);
     try {
-      await deleteTarget(t.slug);
-      onDeleted(t.slug);
+      const { overview } = await deleteTarget(t.slug);
+      onDeleted(t.slug, overview);
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : "backend unreachable");
       setBusy(false);
@@ -51,7 +73,13 @@ function ResumeCard({ t, onDeleted }: { t: TargetInfo; onDeleted: (slug: string)
   };
 
   return (
-    <li className={`${glass} flex min-w-0 flex-col gap-3 p-4`}>
+    // layout: siblings slide into the gap; exit: this card fades and shrinks (AnimatePresence)
+    <motion.li
+      layout
+      exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.25 } }}
+      transition={{ layout: { type: "spring", stiffness: 300, damping: 34 } }}
+      className={`${glass} flex min-w-0 flex-col gap-3 p-4`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="min-w-0 font-mono text-base font-semibold text-white [overflow-wrap:anywhere]">{t.slug}</h3>
         <span
@@ -116,7 +144,7 @@ function ResumeCard({ t, onDeleted }: { t: TargetInfo; onDeleted: (slug: string)
           Delete
         </button>
       )}
-    </li>
+    </motion.li>
   );
 }
 
@@ -131,6 +159,7 @@ export default function Dashboard() {
   }, []);
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className={mesh}>
       <main className="mx-auto max-w-[1200px] space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
@@ -172,28 +201,37 @@ export default function Dashboard() {
 
             <section aria-labelledby="resumes-h">
               <h2 id="resumes-h" className="mb-3 text-lg font-semibold text-white">Resumes</h2>
-              {data.targets.length === 0 ? (
-                <p className={`${glass} p-4 text-sm text-slate-100`}>
-                  No resumes yet -- propose one from the Tailor tab in the{" "}
-                  <Link href="/workspace" className="underline">workspace</Link>.
-                </p>
-              ) : (
-                <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <AnimatePresence>
                   {data.targets.map((t) => (
                     <ResumeCard
                       key={t.slug}
                       t={t}
-                      onDeleted={(slug) =>
-                        setData({ ...data, targets: data.targets.filter((x) => x.slug !== slug) })
+                      // One state update: the tiles get their new numbers (and count to them) while
+                      // the card exits and its siblings slide into place.
+                      onDeleted={(slug, o) =>
+                        setData((d) => d && { master: o.master, targets: d.targets.filter((x) => x.slug !== slug) })
                       }
                     />
                   ))}
-                </ul>
+                </AnimatePresence>
+              </ul>
+              {data.targets.length === 0 && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.25 }}
+                  className={`${glass} p-4 text-sm text-slate-100`}
+                >
+                  No resumes yet -- propose one from the Tailor tab in the{" "}
+                  <Link href="/workspace" className="underline">workspace</Link>.
+                </motion.p>
               )}
             </section>
           </>
         )}
       </main>
     </div>
+    </MotionConfig>
   );
 }
