@@ -4,11 +4,11 @@
 
 import { animate } from "motion";
 import {
-  AdditiveBlending,
   BufferAttribute,
   BufferGeometry,
   Color,
   PerspectiveCamera,
+  NormalBlending,
   Points,
   Scene,
   ShaderMaterial,
@@ -127,7 +127,7 @@ export function createParticleMorph(canvas: HTMLCanvasElement, opts: MorphOption
     fragmentShader: FRAG,
     transparent: true,
     depthWrite: false,
-    blending: AdditiveBlending,
+    blending: NormalBlending, // additive overlaps saturate to white; normal keeps the colours
   });
   const points = new Points(geometry, material);
   points.frustumCulled = false; // the shader moves points far from the (start-only) bounds

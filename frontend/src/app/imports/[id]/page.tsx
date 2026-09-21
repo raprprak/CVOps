@@ -8,7 +8,8 @@ import {
   ApiError, ApplyResult, BuildResult, DraftMaster, DraftText, ImportDraft,
   applyImport, buildTarget, getImport, pdfUrl, saveImport,
 } from "@/lib/api";
-import { btn, cta, glass, mesh } from "@/lib/glass";
+import { btn, cta, glass } from "@/lib/glass";
+import { NextStep, PageHeader, Steps } from "@/lib/flow";
 import { collapse, ease, rise, stagger } from "@/lib/fx/presets";
 import { Field, Module, Sec, patch } from "@/lib/ui";
 
@@ -253,18 +254,25 @@ export default function ReviewImport() {
   const slugOk = SLUG.test(slug);
 
   return (
-    <div className={mesh}>
+    <div>
       <div className="mx-auto max-w-[1400px]">
-        <motion.header variants={rise} initial="hidden" animate="show" className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-xl font-semibold text-white">Review &amp; edit</h1>
-            {draft && <p className="font-mono text-sm text-slate-200 [overflow-wrap:anywhere]">{draft.filename}</p>}
-          </div>
-          <nav aria-label="Primary" className="flex gap-2">
-            <Link href="/upload" className={btn}>Uploads</Link>
-            <Link href="/" className={btn}>Dashboard</Link>
-          </nav>
-        </motion.header>
+        <PageHeader
+          crumbs={[{ label: "Resumes", href: "/" }, { label: "New resume", href: "/new" }, { label: "Upload", href: "/upload" }, { label: "Review" }]}
+          title="Review & edit"
+          subtitle={
+            draft ? (
+              <>
+                Check what we read from <span className="font-mono [overflow-wrap:anywhere]">{draft.filename}</span>, fix anything
+                that is wrong, then press <strong>Apply &amp; build</strong> to create your resume.
+              </>
+            ) : (
+              "Check what we read from your file, fix anything that is wrong, then apply it to create your resume."
+            )
+          }
+        />
+        <div className="mb-6">
+          <Steps current={2} done={1} />
+        </div>
 
         {error && (
           <motion.p
@@ -329,13 +337,13 @@ export default function ReviewImport() {
                   </details>
                 )}
                 <p className="text-xs text-slate-300">
-                  Problems refresh when you save. This is a draft: nothing here is in your master profile until you apply it.
+                  Problems refresh when you save. This is a draft: nothing here is in your career data until you apply it.
                 </p>
 
                 <div className="space-y-3 border-t border-white/20 pt-3">
-                  <h2 className="text-base font-semibold text-white">Apply to master &amp; build resume</h2>
+                  <h2 className="text-base font-semibold text-white">Create the resume</h2>
                   <p className="text-xs text-slate-300">
-                    Adds what is new to your master profile (existing entries, ids and comments are untouched),
+                    Adds what is new to your career data (nothing you already have is changed),
                     creates a resume that selects exactly this content, and builds its PDF.
                     {draft.applied_at && " This draft was already applied; another name adds a second resume."}
                   </p>
@@ -356,7 +364,7 @@ export default function ReviewImport() {
                   <div aria-live="polite" className="space-y-2 text-sm text-slate-100">
                     {applied && (
                       <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: ease.out }}>
-                        Added to master: {counts(applied.added)}. Already there: {counts(applied.already_present)}.
+                        Added to your career data: {counts(applied.added)}. Already there: {counts(applied.already_present)}.
                         Created resume <span className="font-mono">{applied.slug}</span>.
                       </motion.p>
                     )}
@@ -376,7 +384,11 @@ export default function ReviewImport() {
                             {build.errors.map((e, i) => <li key={i}>{e}</li>)}
                           </ul>
                         )}
-                        <a href={pdfUrl(build.slug)} target="_blank" rel="noopener noreferrer" className={`${btn} inline-block`}>Open PDF</a>
+                        <div className="flex flex-wrap gap-2">
+                          <a href={pdfUrl(build.slug)} target="_blank" rel="noopener noreferrer" className={`${btn} inline-block`}>Open PDF</a>
+                          <NextStep href={`/tailor?resume=${build.slug}`}>Next: tailor it to a job</NextStep>
+                          <Link href="/" className={btn}>See it on the dashboard</Link>
+                        </div>
                       </motion.div>
                     )}
                     {buildError && <p className="text-red-200 [overflow-wrap:anywhere]">The resume was created but the build failed: {buildError}</p>}

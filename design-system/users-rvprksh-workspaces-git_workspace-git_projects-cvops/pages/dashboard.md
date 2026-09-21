@@ -1,45 +1,7 @@
-# Dashboard Page Overrides
+# Resumes (`/`)
 
-> **PROJECT:** /Users/rvprksh/workspaces/git_workspace/git_projects/CVOps
-> **Generated:** 2026-09-20 20:44:11
-> **Page Type:** Dashboard / Data View
+> Overrides `../MASTER.md`. Only deviations and page-specific rules are listed; everything else follows the Master.
 
-> ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/MASTER.md`).
-> Only deviations from the Master are documented here. For all other rules, refer to the Master.
-
----
-
-## Page-Specific Rules
-
-### Layout Overrides
-
-- **Max Width:** 1200px (standard)
-- **Layout:** Full-width sections, centered content
-
-### Spacing Overrides
-
-- No overrides — use Master spacing
-
-### Typography Overrides
-
-- No overrides — use Master typography
-
-### Color Overrides
-
-- No overrides — use Master colors
-
-### Component Overrides
-
-- No overrides — use Master component specs
-
----
-
-## Page-Specific Components
-
-- No unique components for this page
-
----
-
-## Recommendations
-
-- Effects: Backdrop blur (10-20px), subtle border (1px solid rgba white 0.2), light reflection, Z-depth
+- Empty: say why (no resumes yet), then `StartOptions` and `Steps`. Populated: a collapsed "How it works" (open until a PDF has been built), "Your career data" tiles, "Resume versions" cards.
+- No hero animation or duplicate navigation in the page body; the shell is the navigation. Tiles count to new values and cards fade out on delete.
+- Card: icon tile, slug, version, Valid/Invalid, three metrics, build status dot, then `Open PDF` and `Manage` on one aligned row. Manage holds Tailor to a job, Rebuild PDF, Delete version (confirm).

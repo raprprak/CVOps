@@ -3,7 +3,7 @@
 // the resume preview sheet must stay opaque (ATS).
 
 export const mesh =
-  "min-h-dvh bg-slate-950 bg-[image:radial-gradient(at_15%_10%,var(--color-indigo-800),transparent_50%),radial-gradient(at_85%_15%,var(--color-blue-900),transparent_50%),radial-gradient(at_50%_100%,var(--color-slate-700),transparent_55%)] px-4 py-6 text-slate-50 sm:px-6";
+  "min-h-dvh bg-slate-950 bg-[image:radial-gradient(at_15%_10%,var(--color-indigo-800),transparent_50%),radial-gradient(at_85%_15%,var(--color-blue-900),transparent_50%),radial-gradient(at_50%_100%,var(--color-slate-700),transparent_55%)] text-slate-50";
 
 export const glass = "rounded-2xl border border-white/20 bg-white/10 shadow-xl backdrop-blur-md";
 

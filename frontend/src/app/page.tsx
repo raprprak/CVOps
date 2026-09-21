@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
 import { ApiError, Overview, TargetInfo, buildTarget, deleteTarget, getOverview, pdfUrl } from "@/lib/api";
-import { btn, cta, glass, mesh } from "@/lib/glass";
-import { ParticleMorph, pop, rise, stagger } from "@/lib/fx";
+import { btn, glass } from "@/lib/glass";
+import { pop, rise, stagger } from "@/lib/fx";
+import { PageHeader, StartOptions, Steps } from "@/lib/flow";
 import { ActionMenu } from "@/lib/ui";
 
 const fmt = (iso: string) =>
@@ -44,12 +44,12 @@ function Stat({ label, value }: { label: string; value: number }) {
     return () => c.stop();
   }, [mv, value, reduce]);
   return (
-    <motion.div variants={pop} whileHover={{ y: -3 }} className={`${glass} p-4`}>
+    <motion.div variants={pop} whileHover={{ y: -3 }} className={`${glass} p-3`}>
       <dt className="text-sm text-slate-200">{label}</dt>
       <motion.dd
         animate={{ color: moving ? "#fdba74" : "#ffffff" }}
         transition={{ duration: 0.3 }}
-        className="mt-1 text-3xl font-semibold tabular-nums"
+        className="mt-0.5 text-2xl font-semibold tabular-nums"
       >
         {shown}
       </motion.dd>
@@ -165,6 +165,11 @@ function ResumeCard({
         }
         items={[
           {
+            label: "Tailor to a job",
+            hint: "match keywords",
+            to: `/tailor?resume=${t.slug}`,
+          },
+          {
             label: "Rebuild PDF",
             hint: "build & lint",
             disabled: !t.valid,
@@ -201,90 +206,99 @@ export default function Dashboard() {
       .catch((e) => setError(e instanceof ApiError ? e.message : "backend unreachable"));
   }, []);
 
+  const count = data?.targets.length ?? 0;
+  // How far along the three-step workflow this person is, from what exists: any resume = step 1
+  // done; any built PDF = step 2 done. Tailoring can't be detected, so step 3 is never "done".
+  const done = count === 0 ? 0 : data?.targets.some((t) => t.built_at) ? 2 : 1;
+
   return (
-    <div className={mesh}>
-      <main className="mx-auto max-w-[1200px] space-y-8">
-        <motion.header
-          variants={rise}
-          initial="hidden"
-          animate="show"
-          className={`${glass} flex flex-wrap items-center justify-between gap-4 overflow-hidden px-6 py-6`}
-        >
-          <div className="min-w-0 space-y-4">
+    <div className="mx-auto max-w-[1200px]">
+      <PageHeader
+        title="Your resumes"
+        subtitle={
+          data && count === 0
+            ? "You have not made a resume yet. Start below."
+            : "Every version you have built. Open a PDF, tailor one to a job, or start a new resume."
+        }
+      />
+
+      {error && (
+        <p role="alert" className={`${glass} border-red-300/40 px-4 py-3 text-sm text-red-200`}>
+          Can&apos;t reach the CVOps API at localhost:8000 -- is it running? ({error})
+        </p>
+      )}
+      {!data && !error && <p aria-busy="true" className="text-sm text-slate-200">Loading...</p>}
+
+      {data && count === 0 && (
+        // Empty state: say why it is empty, show what to do, and show what comes after.
+        <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-8">
+          <motion.section variants={rise} aria-labelledby="start-h" className="space-y-4">
             <div>
-              <h1 className="text-3xl font-semibold text-white">CVOps</h1>
-              <p className="text-sm text-slate-200">Resume-as-code dashboard</p>
+              <h2 id="start-h" className="text-xl font-semibold text-white">Let&apos;s make your first resume</h2>
+              <p className="text-base text-slate-200">Choose how to start. You check everything before it is saved.</p>
             </div>
-            <nav aria-label="Primary" className="flex flex-wrap gap-2">
-              <Link href="/upload" className={cta}>Upload resume</Link>
-              <Link href="/workspace" className={btn}>Workspace</Link>
-              <Link href="/builder" className={btn}>Resume builder</Link>
-            </nav>
-          </div>
-          {/* decorative: a resume page dissolves into a globe and back */}
-          <ParticleMorph loop className="pointer-events-none h-40 w-full sm:h-48 sm:w-72" />
-        </motion.header>
+            <StartOptions />
+          </motion.section>
+          <motion.section variants={rise} aria-labelledby="how-h" className="space-y-3">
+            <h2 id="how-h" className="text-lg font-semibold text-white">How it works</h2>
+            <Steps current={1} />
+          </motion.section>
+        </motion.div>
+      )}
 
-        {error && (
-          <p role="alert" className={`${glass} border-red-300/40 px-4 py-3 text-sm text-red-200`}>
-            Can&apos;t reach the CVOps API at localhost:8000 -- is it running? ({error})
-          </p>
-        )}
-        {!data && !error && <p aria-busy="true" className="text-sm text-slate-200">Loading...</p>}
+      {data && count > 0 && (
+        // Mounted when the data lands, so it staggers in then: tiles pop, cards rise.
+        <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-8">
+          <motion.details variants={rise} open={done < 2} className={`${glass} group`}>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-4 py-3 text-base font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [&::-webkit-details-marker]:hidden">
+              How it works
+              <span className="text-sm font-normal text-slate-300">{done} of 3 steps done</span>
+            </summary>
+            <div className="px-4 pb-4">
+              <Steps done={done} current={Math.min(done + 1, 3) as 1 | 2 | 3} />
+            </div>
+          </motion.details>
 
-        {data && (
-          // Mounted when the data lands, so it staggers in then: tiles pop, cards rise.
-          <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-8">
-            <section aria-labelledby="master-h">
-              <h2 id="master-h" className="text-lg font-semibold text-white">Your resumes</h2>
-              <p className="mb-3 text-sm text-slate-200">
-                {data.master.name} · distinct items used across the resumes below
-              </p>
-              <motion.dl variants={stagger} className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <Stat label="Resumes" value={data.targets.length} />
-                <Stat label="Roles" value={data.master.roles} />
-                <Stat label="Bullets" value={data.master.bullets} />
-                <Stat label="Skills" value={data.master.skills} />
-                <Stat label="Projects" value={data.master.projects} />
-                <Stat label="Education" value={data.master.education} />
-                <Stat label="Certifications" value={data.master.certifications} />
-              </motion.dl>
-            </section>
+          <section aria-labelledby="career-h">
+            <h2 id="career-h" className="text-lg font-semibold text-white">Your career data</h2>
+            <p className="mb-3 text-sm text-slate-200">
+              {data.master.name} &middot; what your {count} resume{count === 1 ? "" : "s"} draw on
+            </p>
+            <motion.dl variants={stagger} className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+              <Stat label="Resumes" value={count} />
+              <Stat label="Roles" value={data.master.roles} />
+              <Stat label="Bullets" value={data.master.bullets} />
+              <Stat label="Skills" value={data.master.skills} />
+              <Stat label="Projects" value={data.master.projects} />
+              <Stat label="Education" value={data.master.education} />
+              <Stat label="Certifications" value={data.master.certifications} />
+            </motion.dl>
+          </section>
 
-            <section aria-labelledby="resumes-h">
-              <h2 id="resumes-h" className="text-lg font-semibold text-white">Resume versions</h2>
-              <p className="mb-3 text-sm text-slate-200">Each version selects content from your master profile and builds to an ATS-safe PDF.</p>
-              <motion.ul variants={stagger} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                <AnimatePresence>
-                  {data.targets.map((t) => (
-                    <ResumeCard
-                      key={t.slug}
-                      t={t}
-                      onRefreshed={setData}
-                      // One state update: the tiles get their new numbers (and count to them) while
-                      // the card fades out and its siblings slide into place.
-                      onDeleted={(slug, o) =>
-                        setData((d) => d && { master: o.master, targets: d.targets.filter((x) => x.slug !== slug) })
-                      }
-                    />
-                  ))}
-                </AnimatePresence>
-              </motion.ul>
-              {data.targets.length === 0 && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.25 }}
-                  className={`${glass} p-4 text-sm text-slate-100`}
-                >
-                  No resumes yet -- propose one from the Tailor tab in the{" "}
-                  <Link href="/workspace" className="underline">workspace</Link>.
-                </motion.p>
-              )}
-            </section>
-          </motion.div>
-        )}
-      </main>
+          <section aria-labelledby="resumes-h">
+            <h2 id="resumes-h" className="text-lg font-semibold text-white">Resume versions</h2>
+            <p className="mb-3 text-sm text-slate-200">
+              Each version selects content from your career data and builds to an ATS-safe PDF.
+            </p>
+            <motion.ul variants={stagger} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <AnimatePresence>
+                {data.targets.map((t) => (
+                  <ResumeCard
+                    key={t.slug}
+                    t={t}
+                    onRefreshed={setData}
+                    // One state update: the tiles get their new numbers (and count to them) while
+                    // the card fades out and its siblings slide into place.
+                    onDeleted={(slug, o) =>
+                      setData((d) => d && { master: o.master, targets: d.targets.filter((x) => x.slug !== slug) })
+                    }
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.ul>
+          </section>
+        </motion.div>
+      )}
     </div>
   );
 }

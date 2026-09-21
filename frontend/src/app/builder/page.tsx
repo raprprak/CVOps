@@ -4,7 +4,8 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { ApiError, ApplyResult, Basics, BuildResult, DraftMaster, applyImport, buildTarget, createDraft, getMaster, pdfUrl } from "@/lib/api";
-import { btn, cta, glass, mesh } from "@/lib/glass";
+import { btn, cta, glass } from "@/lib/glass";
+import { NextStep, PageHeader, Steps } from "@/lib/flow";
 import { collapse, ease, rise, stagger } from "@/lib/fx/presets";
 import { Field, Module, Sec, patch } from "@/lib/ui";
 
@@ -98,11 +99,15 @@ export default function Builder() {
   }
 
   return (
-    <div className={mesh}>
-      <motion.div variants={rise} initial="hidden" animate="show" className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-white">ATS Resume Builder</h1>
-        <Link href="/" className={btn}>Dashboard</Link>
-      </motion.div>
+    <div className="mx-auto max-w-[1400px]">
+      <PageHeader
+        crumbs={[{ label: "Resumes", href: "/" }, { label: "New resume", href: "/new" }, { label: "Build from scratch" }]}
+        title="Build from scratch"
+        subtitle="Fill in your roles, skills and education. When you press Build resume, they are added to your career data and laid out as an ATS-safe PDF."
+      />
+      <div className="mb-6">
+        <Steps current={1} />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         {/* LEFT: glass controls */}
@@ -110,8 +115,8 @@ export default function Builder() {
           <motion.div variants={rise} className={`${glass} space-y-3 p-4`}>
             <h2 className="text-base font-semibold text-white">Build resume</h2>
             <p className="text-xs text-slate-300">
-              Adds what is new to your master profile (existing entries are untouched), creates a resume that selects
-              exactly this content, and builds its PDF.
+              Adds what is new to your career data (nothing you already have is changed), creates a resume from exactly this
+              content, and builds its PDF.
             </p>
             <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
               <Field label="Resume name (lowercase, digits, hyphens)" value={slug} onChange={setSlug} placeholder="my-resume" />
@@ -141,7 +146,7 @@ export default function Builder() {
               {done && (
                 <div className="space-y-2">
                   <p>
-                    Added to master: {counts(done.applied.added)}. Already there: {counts(done.applied.already_present)}.
+                    Added to your career data: {counts(done.applied.added)}. Already there: {counts(done.applied.already_present)}.
                     Created resume <span className="font-mono">{done.applied.slug}</span>.
                   </p>
                   {done.built && (
@@ -153,6 +158,7 @@ export default function Builder() {
                   {done.buildError && <p className="text-red-200 [overflow-wrap:anywhere]">The resume was created but the build failed: {done.buildError}</p>}
                   <div className="flex flex-wrap gap-2">
                     {done.built && <a href={pdfUrl(done.applied.slug)} target="_blank" rel="noopener noreferrer" className={btn}>Open PDF</a>}
+                    <NextStep href={`/tailor?resume=${done.applied.slug}`}>Next: tailor it to a job</NextStep>
                     <Link href="/" className={btn}>See it on the dashboard</Link>
                   </div>
                 </div>
@@ -168,12 +174,12 @@ export default function Builder() {
 
           <Module id="basics" title="Basics">
             <p className="text-sm text-slate-200">
-              Contact details come from your master profile, so every resume you build shares them. To change them, edit{" "}
+              Contact details come from your career data, so every resume you build shares them. To change them, edit{" "}
               <span className="font-mono">data/master.yaml</span>.
             </p>
             {masterError ? (
               <p role="alert" className="text-sm text-red-200 [overflow-wrap:anywhere]">
-                Can&apos;t read the master profile ({masterError}). Building needs it.
+                Can&apos;t read your career data ({masterError}). Building needs it.
               </p>
             ) : (
               <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
