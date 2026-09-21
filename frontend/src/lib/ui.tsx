@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
 import { ReactNode, useId, useState } from "react";
 import { DotsMorph } from "@/lib/fx/DotsMorph";
 import { collapse, ease, rise } from "@/lib/fx/presets";
@@ -88,7 +89,8 @@ export function Module({ id, title, children }: { id: string; title: string; chi
 export interface MenuItem {
   label: string;
   hint?: string;
-  href?: string; // a link (new tab) instead of an action
+  href?: string; // an external link (new tab) instead of an action
+  to?: string; // an in-app link
   onSelect?: () => Promise<string | void> | string | void;
   danger?: boolean;
   confirm?: string; // ask this question first, with Yes / Keep
@@ -151,6 +153,11 @@ export function ActionMenu({ label = "Manage", items, leading }: { label?: strin
                         Keep
                       </button>
                     </div>
+                  ) : it.to ? (
+                    <Link href={it.to} className={itemClass}>
+                      {it.label}
+                      {it.hint && <span className="text-xs text-slate-300">{it.hint}</span>}
+                    </Link>
                   ) : it.href ? (
                     <a href={it.href} target="_blank" rel="noopener noreferrer" className={itemClass}>
                       {it.label}

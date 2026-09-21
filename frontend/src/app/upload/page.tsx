@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { ApiError, ImportSummary, listImports, uploadResume } from "@/lib/api";
-import { btn, glass, mesh, motion as tx } from "@/lib/glass";
+import { ApiError, ImportSummary, deleteImport, listImports, uploadResume } from "@/lib/api";
+import { btn, cta, glass, motion as tx } from "@/lib/glass";
 import { ParticleMorph, ease, rise, spring, stagger } from "@/lib/fx";
+import { PageHeader, Steps } from "@/lib/flow";
+import { ActionMenu } from "@/lib/ui";
 
 type Pending = { key: string; name: string; error?: string };
 
@@ -21,7 +23,7 @@ function Spinner() {
   );
 }
 
-function ImportCard({ r, i }: { r: ImportSummary; i: number }) {
+function ImportCard({ r, i, onDeleted }: { r: ImportSummary; i: number; onDeleted: (id: string) => void }) {
   const counts: [string, number][] = [
     ["roles", r.roles],
     ["bullets", r.bullets],
@@ -57,9 +59,30 @@ function ImportCard({ r, i }: { r: ImportSummary; i: number }) {
         ))}
       </ul>
       {r.applied_at && (
-        <p className="text-sm text-emerald-200">Applied to master {fmt(r.applied_at)}</p>
+        <p className="text-sm text-emerald-200">Added to your career data {fmt(r.applied_at)}</p>
       )}
-      <Link href={`/imports/${r.id}`} className={`${btn} inline-block`}>Review &amp; edit</Link>
+      <ActionMenu
+        leading={
+          <Link
+            href={`/imports/${r.id}`}
+            className={`${r.applied_at ? btn : cta} inline-flex flex-1 items-center justify-center gap-2`}
+          >
+            {r.applied_at ? "Open draft" : "Review & edit"}
+            <span aria-hidden="true">→</span>
+          </Link>
+        }
+        items={[
+          {
+            label: "Delete draft",
+            danger: true,
+            confirm: "Delete this draft? Its file moves to data/.trash.",
+            onSelect: async () => {
+              await deleteImport(r.id);
+              onDeleted(r.id);
+            },
+          },
+        ]}
+      />
       {r.problems.length > 0 && (
         <details className="text-sm text-red-200">
           <summary className={`cursor-pointer rounded ${tx} hover:text-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white`}>
@@ -114,17 +137,16 @@ export default function Upload() {
   }
 
   return (
-    <div className={mesh}>
-      <motion.main variants={stagger} initial="hidden" animate="show" className="mx-auto max-w-[1200px] space-y-6">
-        <motion.header variants={rise} className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Upload resumes</h1>
-            <p className="text-sm text-slate-200">
-              Each file is parsed into a draft. Nothing touches your master profile until you apply it.
-            </p>
-          </div>
-          <Link href="/" className={btn}>Dashboard</Link>
-        </motion.header>
+    <div>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="mx-auto max-w-[1200px] space-y-6">
+        <div>
+          <PageHeader
+            crumbs={[{ label: "Resumes", href: "/" }, { label: "New resume", href: "/new" }, { label: "Upload" }]}
+            title="Upload a resume"
+            subtitle="We read your PDF or Word file and turn it into an editable draft. Nothing is saved to your career data until you check it and apply it."
+          />
+          <Steps current={1} />
+        </div>
 
         <motion.label
           variants={rise}
@@ -190,18 +212,21 @@ export default function Upload() {
         )}
 
         <motion.section variants={rise} aria-labelledby="imports-h">
-          <h2 id="imports-h" className="mb-3 text-lg font-semibold text-white">Imported drafts</h2>
+          <h2 id="imports-h" className="text-lg font-semibold text-white">Your drafts</h2>
+          <p className="mb-3 text-sm text-slate-200">Next step: open a draft, fix anything the parser missed, then apply it to create a resume.</p>
           {imports.length === 0 ? (
             <p className={`${glass} p-4 text-sm text-slate-100`}>No resumes imported yet.</p>
           ) : (
             <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <AnimatePresence>
-                {imports.map((r, i) => <ImportCard key={r.id} r={r} i={i} />)}
+                {imports.map((r, i) => (
+                  <ImportCard key={r.id} r={r} i={i} onDeleted={(id) => setImports((all) => all.filter((x) => x.id !== id))} />
+                ))}
               </AnimatePresence>
             </ul>
           )}
         </motion.section>
-      </motion.main>
+      </motion.div>
     </div>
   );
 }

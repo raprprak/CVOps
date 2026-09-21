@@ -1,6 +1,6 @@
 # Frontend rules (Next.js / TypeScript)
 
-`frontend/` is the web app over the API in `src/cvops/api/app.py` (decision 06 in `docs/PLAN.md`): dashboard (`/`), upload and review/edit of imported resumes (`/upload`, `/imports/[id]`), builder (`/builder`) and the original tabbed tool (`/workspace`). Next 16, React 19, Tailwind 4, `motion`, `three`.
+`frontend/` is the web app over the API in `src/cvops/api/app.py` (decision 06 in `docs/PLAN.md`): an app shell (`src/lib/flow.tsx`: brand, `Resumes`, `Tailor to a job`, and one primary `New resume` button) around the dashboard (`/`), `/new` (the upload-or-build choice), upload and review/edit of imported resumes (`/upload`, `/imports/[id]`), the builder (`/builder`) and tailoring (`/tailor`). Next 16, React 19, Tailwind 4, `motion`, `three`.
 
 ## Before writing code
 - Next 16 has breaking changes: read the relevant guide in `frontend/node_modules/next/dist/docs/` first (see `frontend/AGENTS.md`).
@@ -10,6 +10,7 @@
 - npm, App Router (`src/app/`), TypeScript strict, Tailwind. Checks: `npm run lint`, `npx tsc --noEmit`, `npm run build` (`next build` and `next dev` use separate output folders, so they can run together).
 
 ## Conventions
+- Workflow: 1 Add career data (upload or build) -> 2 Review & build -> 3 Tailor to a job. Every page says which step it is (`Steps`, `PageHeader` breadcrumbs from `flow.tsx`), and ends by offering the next one. User-facing copy says "career data", never "master". The shell owns the single `<main>` landmark; pages must not render another.
 - All backend calls go through the typed client `src/lib/api.ts`; the API base URL is a constant there (`http://localhost:8000`). Its types mirror the API's Pydantic models: when one changes, check the other.
 - Pages are client components (they fetch on mount and hold form state); the root layout stays a Server Component.
 - Shared glass classes: `src/lib/glass.ts`. Shared widgets: `src/lib/ui.tsx` (`Field`, `Module`, `ActionMenu`). `glass.ts` exports a transition-class string named `motion`; where you also need `motion/react`, import it as `motion as tx`.

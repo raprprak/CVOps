@@ -96,6 +96,13 @@ def load_import(data_dir: Path, import_id: str) -> ImportDraft:
         raise DataError(f"{path}: invalid draft:\n  - {_format_validation_error(exc)}") from exc
 
 
+def import_files(data_dir: Path, import_id: str) -> list[Path]:
+    """The draft and the uploaded original for one import id (empty if there are none)."""
+    if not re.fullmatch(r"[0-9a-f]{12}", import_id):
+        raise DataError(f"invalid import id {import_id!r}")
+    return sorted(p for p in imports_dir(data_dir).glob(f"{import_id}.*") if p.is_file())
+
+
 def list_imports(data_dir: Path) -> list[ImportDraft]:
     """Saved import drafts, newest first; an unreadable draft is skipped, not fatal."""
     drafts: list[ImportDraft] = []

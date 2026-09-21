@@ -226,6 +226,9 @@ export const applyImport = (id: string, slug: string, maxPages: number) =>
     body: JSON.stringify({ slug, max_pages: maxPages }),
   });
 
+export const deleteImport = (id: string) =>
+  request<{ moved: string[] }>(`/imports/${id}`, { method: "DELETE" });
+
 export const listImports = () => request<ImportSummary[]>("/imports");
 
 export const uploadResume = (file: File) => {

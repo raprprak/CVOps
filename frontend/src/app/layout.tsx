@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { FxProvider } from "@/lib/fx/FxProvider";
+import { AppShell } from "@/lib/flow";
 import "./globals.css";
 
 // Plus Jakarta Sans per design-system MASTER.md.
@@ -27,7 +28,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${jakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <FxProvider>{children}</FxProvider>
+        <FxProvider>
+          <AppShell>{children}</AppShell>
+        </FxProvider>
       </body>
     </html>
   );

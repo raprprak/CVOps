@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 
 from cvops.core.files import (
     DataError,
+    import_files,
     imports_dir,
     list_imports,
     list_target_slugs,
@@ -261,6 +262,21 @@ def update_import(import_id: str, body: DraftUpdate) -> ImportDraft:
     return draft
 
 
+@app.delete("/imports/{import_id}")
+def delete_import(import_id: str) -> dict[str, list[str]]:
+    """Move a draft and its uploaded file to data/.trash/<stamp>/ (recoverable).
+
+    Master and any resume already made from the draft are untouched.
+    """
+    try:
+        files = import_files(DATA_DIR, import_id)
+    except DataError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    if not files:
+        raise HTTPException(404, f"no draft {import_id!r}")
+    return {"moved": _trash(files)}
+
+
 class NewDraft(BaseModel):
     master: dict[str, Any]
     name: str = Field(default="Resume builder", max_length=200)  # shown in the drafts list
@@ -401,6 +417,18 @@ def get_pdf(slug: str) -> Response:
     return Response(pdf_path.read_bytes(), media_type="application/pdf")
 
 
+def _trash(paths: list[Path]) -> list[str]:
+    """Move the files that exist to data/.trash/<stamp>/ -- recoverable, never unlinked."""
+    trash = DATA_DIR / ".trash" / datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
+    trash.mkdir(parents=True, exist_ok=True)
+    moved: list[str] = []
+    for p in paths:
+        if p.is_file():
+            shutil.move(p, trash / p.name)
+            moved.append(p.name)
+    return moved
+
+
 class DeleteResult(BaseModel):
     moved: list[str]
     overview: Overview  # the dashboard as it is now, so the UI needs no second request
@@ -415,13 +443,7 @@ def delete_target(slug: str) -> DeleteResult:
     src = target_path(DATA_DIR, slug)
     if not re.fullmatch(ID_PATTERN, slug) or not src.is_file():
         raise HTTPException(404, f"no target {slug!r}")
-    trash = DATA_DIR / ".trash" / datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
-    trash.mkdir(parents=True, exist_ok=True)
-    moved: list[str] = []
-    for p in (src, OUT_DIR / f"{slug}.pdf", OUT_DIR / f"{slug}.typ"):
-        if p.is_file():
-            shutil.move(p, trash / p.name)
-            moved.append(p.name)
+    moved = _trash([src, OUT_DIR / f"{slug}.pdf", OUT_DIR / f"{slug}.typ"])
     return DeleteResult(moved=moved, overview=overview())
 
 
