@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
 import { ApiError, Overview, TargetInfo, buildTarget, deleteTarget, getOverview, pdfUrl } from "@/lib/api";
-import { btn, glass } from "@/lib/glass";
+import { btn, cta, glass } from "@/lib/glass";
 import { pop, rise, stagger } from "@/lib/fx";
-import { PageHeader, StartOptions, Steps } from "@/lib/flow";
+import { PageHeader, Steps } from "@/lib/flow";
 import { ActionMenu } from "@/lib/ui";
 
 const fmt = (iso: string) =>
@@ -232,12 +233,12 @@ export default function Dashboard() {
       {data && count === 0 && (
         // Empty state: say why it is empty, show what to do, and show what comes after.
         <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-8">
-          <motion.section variants={rise} aria-labelledby="start-h" className="space-y-4">
-            <div>
-              <h2 id="start-h" className="text-xl font-semibold text-white">Let&apos;s make your first resume</h2>
-              <p className="text-base text-slate-200">Choose how to start. You check everything before it is saved.</p>
-            </div>
-            <StartOptions />
+          <motion.section variants={rise} aria-labelledby="start-h" className={`${glass} space-y-3 p-6`}>
+            <h2 id="start-h" className="text-xl font-semibold text-white">Let&apos;s make your first resume</h2>
+            <p className="max-w-xl text-base text-slate-200">
+              Upload the resume you already have, or build one from scratch. You check everything before it is saved.
+            </p>
+            <Link href="/new" className={`${cta} inline-block`}>Start your first resume</Link>
           </motion.section>
           <motion.section variants={rise} aria-labelledby="how-h" className="space-y-3">
             <h2 id="how-h" className="text-lg font-semibold text-white">How it works</h2>
